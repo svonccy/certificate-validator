@@ -1,0 +1,37 @@
+sequenceDiagram
+    actor O as Operador CNSM
+    participant L as Laravel (Panel)
+    participant BD as Base de Datos
+    actor N as Notario (Offline)
+    participant R as Software RENIEC
+    participant P as Script Python (pyHanko)
+    actor C as Ciudadano
+
+    %% PASADA 1: Borrador
+    O->>L: Sube Plantilla PDF + Datos (DNI, Nombres)
+    L->>BD: Crea Registro (ID, Estado: PENDIENTE)
+    L->>L: Genera QR con URL (cnsm.org.pe/verificar/{ID})
+    L->>L: Incrusta QR en PDF (FPDI)
+    L-->>O: Descarga PDF con QR
+
+    %% PROCESO EXTERNO: Firma
+    O->>N: Entrega PDF impreso o por USB/Red local
+    N->>R: Abre PDF con QR en software RENIEC
+    R->>R: Aplica Firma Digital PAdES (Sella hash)
+    R-->>O: Devuelve PDF Firmado Digitalmente
+
+    %% PASADA 2: Consolidación
+    O->>L: Clic en "Adjuntar PDF" en la fila del {ID}
+    L->>P: Envía PDF a validación local
+    P->>P: Verifica Hash, Cadena de Confianza y Extrae Metadatos
+    P-->>L: Retorna JSON (Válido, Nombre Notario, Fecha)
+    L->>BD: Actualiza Registro (Estado: VÁLIDO, Datos Firma)
+    L->>L: Guarda PDF definitivo en Servidor
+    L-->>O: Confirmación de Éxito
+
+    %% VERIFICACIÓN PÚBLICA
+    C->>C: Escanea QR en papel físico
+    C->>L: Petición a cnsm.org.pe/verificar/{ID}
+    L->>BD: Consulta Estado de {ID}
+    BD-->>L: Retorna VÁLIDO + Datos
+    L-->>C: Muestra Pantalla de Autenticidad Oficial
