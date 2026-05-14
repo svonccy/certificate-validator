@@ -1,7 +1,28 @@
-# Architectural Rules - CNSM Project
-- Stack: Laravel 11, PHP 8.5+, FilamentPHP v5.
-- Microservice: Python 3 CLI script with `pyHanko` for PAdES signatures.
-- FORBIDDEN to use `shell_exec()` in PHP. ALWAYS use `Symfony\Component\Process\Process` to call Python.
-- PDF manipulation in PHP: use `setasign/fpdi` and `tecnickcom/tcpdf`.
-- Conventions: Strict typing in PHP (`declare(strict_types=1);`).
-- Language: Variables, methods, database tables in Spanish (e.g., `$certificado`, `generarQr()`).
+# CNSM Certificate Validator - Copilot Instructions
+
+## Project Summary (Source of Truth)
+- Sources of truth: [README.md](README.md) and [docs/sequence_diagram.mmd](docs/sequence_diagram.mmd).
+- System: two-pass PDF flow (draft QR, then signed validation).
+- Stack: Laravel 13 (PHP 8.3+), FilamentPHP v5, MySQL.
+- PDF: generate/modify with `setasign/fpdi` + `tecnickcom/tcpdf`.
+- Crypto validation: Python 3 CLI using `pyHanko` for PAdES.
+
+## Non-Negotiable Rules
+- FORBIDDEN: `shell_exec()` in PHP.
+- ALWAYS use `Symfony\Component\Process\Process` for Python orchestration.
+- PHP must use strict typing: `declare(strict_types=1);`.
+- Naming in Spanish for variables, methods, and DB tables (e.g., `$certificado`, `generarQr()`).
+
+## AI/Agent Setup
+- This repo uses GitHub Copilot as the only assistant. Prefer MCP tools when available.
+- Copilot MCP config lives in `.vscode/mcp.json` (installed via Laravel Boost).
+- Skills live in `.github/skills/` and can be invoked when relevant.
+
+## Filament v5 vs v4 Warning (Important)
+- Local skill `filament-specialist` is aligned to Filament v4 and may be outdated.
+- If Filament guidance seems wrong or causes errors, treat it as a version mismatch.
+- Always verify against official Filament v5 docs when working on Filament code.
+
+## Workflow Expectations
+- Follow the two-pass PDF flow from the README and the sequence diagram when designing features.
+- Prefer official Laravel/Filament conventions and avoid unnecessary custom patterns.

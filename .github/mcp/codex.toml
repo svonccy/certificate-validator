@@ -1,0 +1,4 @@
+[mcp_servers.laravel-boost]
+command = "wsl.exe"
+args = ["/usr/bin/php8.5", "/home/svonccy/projects/certificate-validator/artisan", "boost:mcp"]
+cwd = "/home/svonccy/projects/certificate-validator"

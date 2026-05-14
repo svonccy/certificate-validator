@@ -9,7 +9,7 @@ Garantiza la inalterabilidad de la firma digital oficial (PAdES) de la RENIEC, i
 ## 🏗️ Stack Tecnológico
 El proyecto utiliza una **Arquitectura Monolítica Híbrida** optimizada para despliegue en entornos Apache/ISPConfig:
 
-*   **Framework Principal:** Laravel 11 (PHP 8.5+)
+*   **Framework Principal:** Laravel 13 (PHP 8.3+)
 *   **Panel Administrativo:** FilamentPHP v5 (TALL Stack: TailwindCSS, Alpine.js, Laravel, Livewire)
 *   **Base de Datos:** MySQL
 *   **Manipulación PDF (Visual):** `setasign/fpdi` y `tecnickcom/tcpdf` (Incrustación de QR sin romper estructura)
