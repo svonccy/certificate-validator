@@ -29,7 +29,18 @@ class CertificadoFactory extends Factory
             ]),
             'estado' => fake()->randomElement(['PENDIENTE', 'VALIDO']),
             'ruta_pdf_original' => null,
+            'ruta_pdf_borrador' => null,
+            'token_borrador' => null,
             'ruta_pdf_firmado' => null,
+            'firma_valida' => false,
+            'firma_fecha' => null,
+            'firma_serial' => null,
+            'firma_algoritmo' => null,
+            'hash_pdf_firmado' => null,
+            'firma_notario_nombre' => null,
+            'firma_notario_documento' => null,
+            'metadatos_firma' => null,
+            'validado_en' => null,
         ];
     }
 }

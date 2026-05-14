@@ -28,7 +28,11 @@ class CertificadoForm
                     ->maxLength(255),
                 FileUpload::make('ruta_pdf_original')
                     ->label('Plantilla PDF original')
-                    ->acceptedFileTypes(['application/pdf']),
+                    ->acceptedFileTypes(['application/pdf'])
+                    ->disk('local')
+                    ->directory('certificados/originales')
+                    ->required()
+                    ->preventFilePathTampering(),
             ]);
     }
 }

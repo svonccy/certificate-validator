@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('tipo_certificado');
             $table->string('estado')->default('PENDIENTE');
             $table->string('ruta_pdf_original')->nullable();
+            $table->string('ruta_pdf_borrador')->nullable();
             $table->string('ruta_pdf_firmado')->nullable();
             $table->timestamps();
         });
