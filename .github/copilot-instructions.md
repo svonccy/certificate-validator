@@ -6,6 +6,7 @@
 - Stack: Laravel 13 (PHP 8.3+), FilamentPHP v5, MySQL.
 - PDF: generate/modify with `setasign/fpdi` + `tecnickcom/tcpdf`.
 - Crypto validation: Python 3 CLI using `pyHanko` for PAdES.
+- Follow Standard Code principles and Laravel best practices.
 
 ## Non-Negotiable Rules
 - FORBIDDEN: `shell_exec()` in PHP.
