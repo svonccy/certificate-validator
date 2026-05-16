@@ -11,7 +11,7 @@ use Symfony\Component\Process\Process;
 
 final class ValidadorFirmaPdf
 {
-    private const DISCO = 'local';
+    private const DISCO = 'public';
 
     private const TIMEOUT = 60;
 

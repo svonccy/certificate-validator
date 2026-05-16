@@ -27,7 +27,7 @@ class CertificadoConfianzaForm
                         'application/x-pem-file',
                         'application/octet-stream',
                     ])
-                    ->disk('local')
+                    ->disk('public')
                     ->directory('certificados/trust-roots')
                     ->required()
                     ->preventFilePathTampering(),

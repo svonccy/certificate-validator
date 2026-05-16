@@ -22,11 +22,7 @@ class CertificadoFactory extends Factory
         return [
             'dni_titular' => fake()->numerify('########'),
             'nombre_titular' => fake()->name(),
-            'tipo_certificado' => fake()->randomElement([
-                'Constancia',
-                'Copia certificada',
-                'Certificado simple',
-            ]),
+            'codigo_certificado' => fake()->lexify('CERT-?????-').fake()->randomNumber(5),
             'estado' => fake()->randomElement(['PENDIENTE', 'VALIDO']),
             'ruta_pdf_original' => null,
             'ruta_pdf_borrador' => null,

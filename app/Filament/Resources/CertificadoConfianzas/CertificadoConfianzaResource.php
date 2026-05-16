@@ -18,15 +18,17 @@ use Filament\Tables\Table;
 
 class CertificadoConfianzaResource extends Resource
 {
+    protected static ?int $navigationSort = 2;
+
     protected static ?string $model = CertificadoConfianza::class;
 
-    protected static ?string $modelLabel = 'Certificado de confianza';
+    protected static ?string $modelLabel = 'Firma autorizada';
 
-    protected static ?string $pluralModelLabel = 'Certificados de confianza';
+    protected static ?string $pluralModelLabel = 'Firmas autorizadas';
 
-    protected static ?string $navigationLabel = 'Certificados de confianza';
+    protected static ?string $navigationLabel = 'Firmas autorizadas';
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShieldCheck;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentCheck;
 
     public static function form(Schema $schema): Schema
     {

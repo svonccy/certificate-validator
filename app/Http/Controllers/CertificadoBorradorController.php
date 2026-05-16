@@ -18,7 +18,7 @@ class CertificadoBorradorController extends Controller
             abort(404);
         }
 
-        $disco = Storage::disk('local');
+        $disco = Storage::disk('public');
 
         if (! $disco->exists($rutaBorrador)) {
             abort(404);

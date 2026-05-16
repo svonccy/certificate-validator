@@ -11,9 +11,15 @@ use setasign\Fpdi\Tcpdf\Fpdi;
 
 final class GeneradorPdfQr
 {
-    private const DISCO = 'local';
-
+    private const DISCO = 'public';
     private const DIRECTORIO_BORRADORES = 'certificados/borradores';
+
+    private const QR_LADO = 30.0;
+    private const QR_ANCHO_BLOQUE = 36.0;
+    private const QR_ALTO_TEXTO = 8.0;
+    private const TEXTO_GAP = 1.0;
+    private const QR_MARGEN_X = 5.0;
+    private const QR_MARGEN_Y = 5.0;
 
     /**
      * @return array{width: float, height: float, orientation: string}
@@ -23,9 +29,9 @@ final class GeneradorPdfQr
         $tamano = $pdf->getTemplateSize($paginaId);
 
         return [
-            'width' => (float) $tamano['width'],
-            'height' => (float) $tamano['height'],
-            'orientation' => (string) $tamano['orientation'],
+            'width' => (float)$tamano['width'],
+            'height' => (float)$tamano['height'],
+            'orientation' => (string)$tamano['orientation'],
         ];
     }
 
@@ -33,13 +39,13 @@ final class GeneradorPdfQr
     {
         $rutaPdfOriginal = $certificado->ruta_pdf_original;
 
-        if (! $rutaPdfOriginal) {
+        if (!$rutaPdfOriginal) {
             throw new RuntimeException('La plantilla PDF no existe en el registro.');
         }
 
         $disco = Storage::disk(self::DISCO);
 
-        if (! $disco->exists($rutaPdfOriginal)) {
+        if (!$disco->exists($rutaPdfOriginal)) {
             throw new RuntimeException('No se encontro la plantilla PDF en el almacenamiento.');
         }
 
@@ -50,7 +56,7 @@ final class GeneradorPdfQr
         $pdf->setPrintFooter(false);
         $pdf->SetMargins(0, 0, 0, true);
         $pdf->SetAutoPageBreak(false);
-        $pdf->SetKeywords('CNSM-TOKEN:'.$tokenBorrador);
+        $pdf->SetKeywords('CNSM-TOKEN:' . $tokenBorrador);
 
         $numeroPaginas = $pdf->setSourceFile($rutaOriginal);
 
@@ -68,7 +74,7 @@ final class GeneradorPdfQr
 
         $disco->makeDirectory(self::DIRECTORIO_BORRADORES);
 
-        $rutaBorrador = self::DIRECTORIO_BORRADORES.'/'.$certificado->id.'.pdf';
+        $rutaBorrador = self::DIRECTORIO_BORRADORES . '/' . $certificado->id . '.pdf';
         $rutaSalida = $disco->path($rutaBorrador);
 
         $pdf->Output($rutaSalida, 'F');
@@ -83,25 +89,45 @@ final class GeneradorPdfQr
     {
         $url = route('certificados.verificar', $certificado);
 
-        $margen = 10.0;
-        $lado = 28.0;
-        $x = $tamano['width'] - $lado - $margen;
-        $y = $tamano['height'] - $lado - $margen;
+        // Posición actual: Esquina Superior Izquierda
+        $xBase = self::QR_MARGEN_X;
+        $yBase = self::QR_MARGEN_Y;
 
-        $pdf->write2DBarcode(
-            $url,
-            'QRCODE,H',
-            $x,
-            $y,
-            $lado,
-            $lado,
-            [
-                'border' => 0,
-                'padding' => 0,
-                'fgcolor' => [0, 0, 0],
-                'bgcolor' => false,
-            ],
-            'N'
-        );
+        $this->imprimirCodigoQr($pdf, $url, $xBase, $yBase);
+        $this->imprimirTextosAdicionales($pdf, $certificado, $xBase, $yBase);
+    }
+
+    private function imprimirCodigoQr(Fpdi $pdf, string $url, float $x, float $y): void
+    {
+        $estiloQr = [
+            'border'  => 0,
+            'padding' => 5,
+            'fgcolor' => [0, 0, 0],
+            'bgcolor' => [255, 255, 255],
+        ];
+
+        $pdf->write2DBarcode($url, 'QRCODE,H', $x, $y, self::QR_LADO, self::QR_LADO, $estiloQr, 'N');
+    }
+
+    private function imprimirTextosAdicionales(Fpdi $pdf, Certificado $certificado, float $xQr, float $yQr): void
+    {
+        $pdf->SetTextColor(0);
+
+        // Calcular la posición Y inicial para los textos (debajo del QR + espacio)
+        $yTexto = $yQr + self::QR_LADO + self::TEXTO_GAP;
+
+        // Calcular retroceso en X para centrar el bloque de texto sobre el QR
+        $xTexto = $xQr - ((self::QR_ANCHO_BLOQUE - self::QR_LADO) / 2);
+
+        $pdf->SetFont('helvetica', '', 7);
+        $pdf->SetXY($xTexto, $yTexto);
+        $pdf->Cell(self::QR_ANCHO_BLOQUE, 4, 'Emitido el: ' . $certificado->fecha_emision_formateada, 0, 1, 'C');
+
+        $pdf->SetXY($xTexto, $yTexto + 4);
+        $pdf->Cell(self::QR_ANCHO_BLOQUE, 4, 'Código de verificación:', 0, 1, 'C');
+
+        $pdf->SetFont('helvetica', 'B', 7);
+        $pdf->SetXY($xTexto, $yTexto + self::QR_ALTO_TEXTO);
+        $pdf->Cell(self::QR_ANCHO_BLOQUE, 4, $certificado->codigo_certificado, 0, 1, 'C');
     }
 }

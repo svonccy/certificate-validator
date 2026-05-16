@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Database\Factories\CertificadoFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 #[Fillable([
     'dni_titular',
     'nombre_titular',
-    'tipo_certificado',
+    'codigo_certificado',
     'estado',
     'ruta_pdf_original',
     'ruta_pdf_borrador',
@@ -28,6 +29,7 @@ use Illuminate\Database\Eloquent\Model;
     'firma_notario_documento',
     'metadatos_firma',
     'validado_en',
+    'fecha_emision',
 ])]
 class Certificado extends Model
 {
@@ -51,6 +53,18 @@ class Certificado extends Model
             'firma_fecha' => 'datetime',
             'validado_en' => 'datetime',
             'metadatos_firma' => 'array',
+            'fecha_emision' => 'datetime', // Se añade el casteo nativo a Carbon para este campo
         ];
+    }
+
+    /**
+     * Accesador moderno para la fecha de emisión formateada.
+     * Esto expone la propiedad dinámica `$certificado->fecha_emision_formateada`.
+     */
+    protected function fechaEmisionFormateada(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): string => ($this->fecha_emision ?? now())->format('d/m/Y'),
+        );
     }
 }

@@ -18,6 +18,8 @@ use Filament\Tables\Table;
 
 class CertificadoResource extends Resource
 {
+    protected static ?int $navigationSort = 1;
+
     protected static ?string $model = Certificado::class;
 
     protected static ?string $modelLabel = 'Certificado';
