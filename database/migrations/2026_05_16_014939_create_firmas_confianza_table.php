@@ -13,8 +13,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('certificados', function (Blueprint $table) {
-            $table->string('token_borrador', 64)->nullable()->after('ruta_pdf_borrador');
+        Schema::create('firmas_confianza', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->string('nombre');
+            $table->string('ruta_firma');
+            $table->boolean('activo')->default(true);
+            $table->timestamps();
         });
     }
 
@@ -23,8 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('certificados', function (Blueprint $table) {
-            $table->dropColumn('token_borrador');
-        });
+        Schema::dropIfExists('firmas_confianza');
     }
 };

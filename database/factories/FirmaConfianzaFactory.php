@@ -2,13 +2,13 @@
 
 namespace Database\Factories;
 
-use App\Models\Certificado;
+use App\Models\FirmaConfianza;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Certificado>
+ * @extends Factory<FirmaConfianza>
  */
-class CertificadoFactory extends Factory
+class FirmaConfianzaFactory extends Factory
 {
     /**
      * Define the model's default state.

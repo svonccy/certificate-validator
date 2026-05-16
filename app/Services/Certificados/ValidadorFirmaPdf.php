@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Certificados;
 
-use App\Models\CertificadoConfianza;
+use App\Models\FirmaConfianza;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Symfony\Component\Process\Process;
@@ -79,7 +79,7 @@ final class ValidadorFirmaPdf
     {
         $disco = Storage::disk(self::DISCO);
 
-        return CertificadoConfianza::query()
+        return FirmaConfianza::query()
             ->where('activo', true)
             ->pluck('ruta_certificado')
             ->filter()

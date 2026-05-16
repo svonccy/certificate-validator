@@ -6,13 +6,13 @@ namespace App\Filament\Resources\Certificados\Schemas;
 
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
-use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Model;
 
 class CertificadoForm
 {
@@ -28,20 +28,30 @@ class CertificadoForm
                                     ->label('Código del certificado')
                                     ->required()
                                     ->maxLength(255),
-                                TextInput::make('dni_titular')
-                                    ->label('DNI')
+                                Select::make('titular_id')
+                                    ->label('Titular del Certificado')
+                                    ->relationship('titular', 'nombre_completo')
+                                    ->searchable()
+                                    ->preload()
                                     ->required()
-                                    ->maxLength(8),
-                                TextInput::make('nombre_titular')
-                                    ->label('Nombre Completo')
-                                    ->required()
-                                    ->maxLength(255),
+                                    ->getOptionLabelFromRecordUsing(fn (Model $record) => "{$record->dni} - {$record->nombre_completo}")
+                                    ->createOptionForm([
+                                        TextInput::make('dni')
+                                            ->label('DNI')
+                                            ->required()
+                                            ->maxLength(8)
+                                            ->unique('titulares', 'dni'),
+                                        TextInput::make('nombre_completo')
+                                            ->label('Nombre Completo')
+                                            ->required()
+                                            ->maxLength(255),
+                                    ]),
                                 DatePicker::make('fecha_emision')
-                                    ->label('Fecha de Emision')
+                                    ->label('Fecha de Emisión')
                                     ->required()
                                     ->default(now()),
                                 FileUpload::make('ruta_pdf_original')
-                                    ->Label('Certificado en PDF')
+                                    ->label('Certificado en PDF')
                                     ->disk('public')
                                     ->directory('certificados/plantillas')
                                     ->acceptedFileTypes(['application/pdf'])
@@ -49,12 +59,12 @@ class CertificadoForm
                                 ToggleButtons::make('estado')
                                     ->label('Estado')
                                     ->options([
-                                        'pendiente' => 'Pendiente',
-                                        'firmado' => 'Firmado',
+                                        'PENDIENTE' => 'Pendiente',
+                                        'FIRMADO' => 'Firmado',
                                     ])
                                     ->colors([
-                                        'pendiente' => 'warning',
-                                        'firmado' => 'success',
+                                        'PENDIENTE' => 'warning',
+                                        'FIRMADO' => 'success',
                                     ])
                                     ->inline()
                                     ->grouped()

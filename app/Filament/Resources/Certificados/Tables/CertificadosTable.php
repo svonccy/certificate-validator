@@ -29,10 +29,10 @@ class CertificadosTable
                 TextColumn::make('codigo_certificado')
                     ->label('Código')
                     ->searchable(),
-                TextColumn::make('dni_titular')
+                TextColumn::make('titular.dni')
                     ->label('DNI')
                     ->searchable(),
-                TextColumn::make('nombre_titular')
+                TextColumn::make('titular.nombre_completo')
                     ->label('Nombre Completo')
                     ->searchable(),
                 TextColumn::make('estado')

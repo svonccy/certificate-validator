@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Filament\Resources\CertificadoConfianzas\Schemas;
+namespace App\Filament\Resources\FirmasConfianza\Schemas;
 
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
 
-class CertificadoConfianzaForm
+class FirmaConfianzaForm
 {
     public static function configure(Schema $schema): Schema
     {
