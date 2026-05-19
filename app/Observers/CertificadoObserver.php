@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Observers;
 
 use App\Models\Certificado;
@@ -44,5 +46,19 @@ class CertificadoObserver
     public function forceDeleted(Certificado $certificado): void
     {
         //
+    }
+
+    /**
+     * Handle the Certificado "deleting" event.
+     */
+    public function deleting(Certificado $certificado): void
+    {
+        if ($certificado->isForceDeleting()) {
+            $certificado->firmaDigital()->withTrashed()->forceDelete();
+
+            return;
+        }
+
+        $certificado->firmaDigital()->delete();
     }
 }
