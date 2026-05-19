@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\EstadoCertificado;
 use App\Models\Certificado;
 use Illuminate\View\View;
 
@@ -17,23 +18,14 @@ class VerificacionCertificadoController extends Controller
         // 2. Extraer la firma y sus metadatos desde la nueva tabla (si existe)
         $firma = $certificado->firmaDigital;
         $metadatosFirma = $firma ? $firma->metadatos_completos : [];
+        $estado = $certificado->estado;
 
         return view('verificacion', [
             'certificado' => $certificado,
             'titular' => $certificado->titular,
             'firmaDigital' => $firma,
-            'estadoTexto' => match ($certificado->estado) {
-                'VALIDO' => 'Válido',
-                'RECHAZADO' => 'Rechazado',
-                'PENDIENTE' => 'Pendiente',
-                default => 'Pendiente',
-            },
-            'estadoClase' => match ($certificado->estado) {
-                'VALIDO' => 'success',
-                'RECHAZADO' => 'danger',
-                'PENDIENTE' => 'warning',
-                default => 'warning',
-            },
+            'estadoTexto' => $estado instanceof EstadoCertificado ? $estado->getLabel() : 'Pendiente',
+            'estadoClase' => $estado instanceof EstadoCertificado ? $estado->getColor() : 'warning',
 
             // Lectura de la llave JSON que ahora viene de FirmaDigital
             'firma' => $metadatosFirma['firma'] ?? [],

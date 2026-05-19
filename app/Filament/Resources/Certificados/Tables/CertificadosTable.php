@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Certificados\Tables;
 
+use App\Enums\EstadoCertificado;
 use App\Models\Certificado;
 use App\Services\Certificados\GeneradorPdfQr;
 use App\Services\Certificados\ValidadorFirmaPdf;
@@ -38,19 +39,7 @@ class CertificadosTable
                     ->searchable(),
                 TextColumn::make('estado')
                     ->label('Estado')
-                    ->badge()
-                    ->color(fn (?string $estado): string => match ($estado ?? 'PENDIENTE') {
-                        'PENDIENTE' => 'warning',
-                        'VALIDO' => 'success',
-                        'RECHAZADO' => 'danger',
-                        default => 'gray',
-                    })
-                    ->formatStateUsing(fn (?string $estado): string => match ($estado ?? 'PENDIENTE') {
-                        'PENDIENTE' => 'Pendiente',
-                        'VALIDO' => 'Valido',
-                        'RECHAZADO' => 'Rechazado',
-                        default => (string) $estado,
-                    }),
+                    ->badge(),
                 TextColumn::make('created_at')
                     ->label('Creado')
                     ->dateTime()
@@ -130,9 +119,9 @@ class CertificadosTable
                             $fechaFirma = $fechaFirma ? Carbon::parse($fechaFirma) : null;
 
                             $estado = match (true) {
-                                $esValido && $cadenaConfiable => 'VALIDO',
-                                $esValido => 'PENDIENTE',
-                                default => 'RECHAZADO',
+                                $esValido && $cadenaConfiable => EstadoCertificado::Valido,
+                                $esValido => EstadoCertificado::Pendiente,
+                                default => EstadoCertificado::Rechazado,
                             };
 
                             DB::transaction(function () use ($record, $rutaPdfFirmado, $estado, $esValido, $fechaFirma, $resultado): void {
@@ -163,12 +152,12 @@ class CertificadosTable
                                     ->title('PDF firmado no coincide con el borrador')
                                     ->body('El PDF firmado no contiene el token del borrador con QR.')
                                     ->color('danger');
-                            } elseif ($estado === 'VALIDO') {
+                            } elseif ($estado === EstadoCertificado::Valido) {
                                 $notificacion
                                     ->title('Firma valida')
                                     ->body('El PDF firmado fue validado y la cadena es confiable.')
                                     ->color('success');
-                            } elseif ($estado === 'PENDIENTE') {
+                            } elseif ($estado === EstadoCertificado::Pendiente) {
                                 $notificacion
                                     ->title('Firma valida con confianza pendiente')
                                     ->body('La firma es integra, pero no se pudo validar la cadena de confianza.')

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\EstadoCertificado;
 use App\Models\Certificado;
 use App\Models\Titular;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -31,7 +32,7 @@ class CertificadoFactory extends Factory
                 return (int) $titular->getKey();
             },
             'codigo_certificado' => fake()->unique()->bothify('CERT-#####'),
-            'estado' => fake()->randomElement(['PENDIENTE', 'VALIDO', 'RECHAZADO']),
+            'estado' => fake()->randomElement(EstadoCertificado::cases()),
             'fecha_emision' => now(),
             'ruta_pdf_original' => 'certificados/originales/'.Str::uuid().'.pdf',
             'ruta_pdf_borrador' => 'certificados/borradores/'.Str::uuid().'.pdf',
