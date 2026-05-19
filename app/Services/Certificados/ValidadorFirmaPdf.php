@@ -51,7 +51,8 @@ final class ValidadorFirmaPdf
         }
 
         $proceso = new Process($comando, null, $env);
-        $proceso->setTimeout(self::TIMEOUT);
+        $timeout = (int) config('certificados.firma_timeout', self::TIMEOUT);
+        $proceso->setTimeout($timeout > 0 ? $timeout : self::TIMEOUT);
         $proceso->run();
 
         $salida = trim($proceso->getOutput());
