@@ -1,14 +1,30 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Certificados;
 
-class SignatureResultParser
+use RuntimeException;
+
+final class SignatureResultParser
 {
     /**
-     * Create a new class instance.
+     * @return array<string, mixed>
      */
-    public function __construct()
+    public function parse(string $salida): array
     {
-        //
+        $salida = trim($salida);
+
+        if ($salida === '') {
+            throw new RuntimeException('El validador no devolvio respuesta.');
+        }
+
+        $resultado = json_decode($salida, true);
+
+        if (! is_array($resultado)) {
+            throw new RuntimeException('Respuesta invalida del validador.');
+        }
+
+        return $resultado;
     }
 }
