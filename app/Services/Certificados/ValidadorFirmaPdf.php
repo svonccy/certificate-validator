@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 
-final class ValidadorFirmaPdf
+final class ValidadorFirmaPdf implements SignatureValidatorContract
 {
     private const DISCO_FALLBACK = 'public';
 
