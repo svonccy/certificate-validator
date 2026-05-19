@@ -17,6 +17,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -133,19 +134,26 @@ class CertificadosTable
                                 default => 'RECHAZADO',
                             };
 
-                            $record->forceFill([
-                                'ruta_pdf_firmado' => $rutaPdfFirmado,
-                                'firma_valida' => $esValido,
-                                'firma_fecha' => $fechaFirma,
-                                'firma_serial' => Arr::get($resultado, 'firma.serial'),
-                                'firma_algoritmo' => Arr::get($resultado, 'firma.algoritmo'),
-                                'hash_pdf_firmado' => Arr::get($resultado, 'firma.hash_pdf'),
-                                'firma_notario_nombre' => Arr::get($resultado, 'firmante.nombre'),
-                                'firma_notario_documento' => Arr::get($resultado, 'firmante.documento'),
-                                'metadatos_firma' => $resultado,
-                                'validado_en' => now(),
-                                'estado' => $estado,
-                            ])->save();
+                            DB::transaction(function () use ($record, $rutaPdfFirmado, $estado, $esValido, $fechaFirma, $resultado): void {
+                                $record->forceFill([
+                                    'ruta_pdf_firmado' => $rutaPdfFirmado,
+                                    'estado' => $estado,
+                                ])->save();
+
+                                $record->firmaDigital()->updateOrCreate(
+                                    ['certificado_id' => $record->getKey()],
+                                    [
+                                        'es_valida' => $esValido,
+                                        'fecha_firma' => $fechaFirma,
+                                        'serial' => Arr::get($resultado, 'firma.serial'),
+                                        'algoritmo' => Arr::get($resultado, 'firma.algoritmo'),
+                                        'hash_documento' => (string) Arr::get($resultado, 'firma.hash_pdf', ''),
+                                        'notario_nombre' => Arr::get($resultado, 'firmante.nombre'),
+                                        'notario_documento' => Arr::get($resultado, 'firmante.documento'),
+                                        'metadatos_completos' => $resultado,
+                                    ]
+                                );
+                            });
 
                             $notificacion = Notification::make();
 
