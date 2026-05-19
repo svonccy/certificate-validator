@@ -11,7 +11,7 @@ use Symfony\Component\Process\Process;
 
 final class ValidadorFirmaPdf
 {
-    private const DISCO = 'public';
+    private const DISCO_FALLBACK = 'public';
 
     private const TIMEOUT = 60;
 
@@ -20,7 +20,7 @@ final class ValidadorFirmaPdf
      */
     public function validar(string $rutaPdfFirmado, ?string $tokenBorrador = null): array
     {
-        $disco = Storage::disk(self::DISCO);
+        $disco = Storage::disk((string) config('certificados.disk', self::DISCO_FALLBACK));
 
         if (! $disco->exists($rutaPdfFirmado)) {
             throw new RuntimeException('No se encontro el PDF firmado en el almacenamiento.');
@@ -82,7 +82,7 @@ final class ValidadorFirmaPdf
      */
     private function obtenerTrustRoots(): array
     {
-        $disco = Storage::disk(self::DISCO);
+        $disco = Storage::disk((string) config('certificados.disk', self::DISCO_FALLBACK));
 
         return FirmaConfianza::query()
             ->where('activo', true)
