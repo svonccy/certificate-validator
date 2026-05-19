@@ -20,11 +20,8 @@ class VerificacionCertificadoController extends Controller
 
         return view('verificacion', [
             'certificado' => $certificado,
-
-            // Pasamos el titular a la vista para que puedas mostrar su Nombre y DNI
             'titular' => $certificado->titular,
-
-            // Ajustado a los nuevos estados de la base de datos
+            'firmaDigital' => $firma,
             'estadoTexto' => match ($certificado->estado) {
                 'FIRMADO' => 'Válido',
                 'ANULADO' => 'Anulado',

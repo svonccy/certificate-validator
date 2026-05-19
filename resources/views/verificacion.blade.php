@@ -321,7 +321,7 @@
                     <div class="status-chip {{ $estadoClase }}">
                         {{ $estadoTexto }}
                     </div>
-                    <h2 class="status-title">{{ $certificado->nombre_titular }}</h2>
+                    <h2 class="status-title">{{ $titular?->nombre_completo ?? 'Titular no disponible' }}</h2>
                     <p class="status-copy">
                         {{ $borradorCoincide ? 'El documento firmado corresponde al borrador registrado.' : 'El documento firmado no coincide con el borrador registrado.' }}
                     </p>
@@ -347,7 +347,7 @@
                 <div class="panel-grid">
                     <div class="field">
                         <small>DNI</small>
-                        <strong>{{ $certificado->dni_titular }}</strong>
+                        <strong>{{ $titular?->dni ?? 'No disponible' }}</strong>
                     </div>
                     <div class="field">
                         <small>Código</small>
@@ -359,15 +359,15 @@
                     </div>
                     <div class="field">
                         <small>Fecha de firma</small>
-                        <strong>{{ $certificado->firma_fecha?->format('d/m/Y H:i:s') ?? 'No disponible' }}</strong>
+                        <strong>{{ $firmaDigital?->fecha_firma?->format('d/m/Y H:i:s') ?? 'No disponible' }}</strong>
                     </div>
                     <div class="field">
                         <small>Validado en</small>
-                        <strong>{{ $certificado->validado_en?->format('d/m/Y H:i:s') ?? 'No disponible' }}</strong>
+                        <strong>{{ $firmaDigital?->created_at?->format('d/m/Y H:i:s') ?? 'No disponible' }}</strong>
                     </div>
                     <div class="field">
                         <small>Serial</small>
-                        <strong>{{ $certificado->firma_serial ?? 'No disponible' }}</strong>
+                        <strong>{{ $firmaDigital?->serial ?? 'No disponible' }}</strong>
                     </div>
                 </div>
             </aside>
