@@ -11,14 +11,16 @@ use setasign\Fpdi\Tcpdf\Fpdi;
 
 final class GeneradorPdfQr
 {
-    private const DISCO = 'public';
-    private const DIRECTORIO_BORRADORES = 'certificados/borradores';
-
     private const QR_LADO = 30.0;
+
     private const QR_ANCHO_BLOQUE = 36.0;
+
     private const QR_ALTO_TEXTO = 8.0;
+
     private const TEXTO_GAP = 1.0;
+
     private const QR_MARGEN_X = 5.0;
+
     private const QR_MARGEN_Y = 5.0;
 
     /**
@@ -29,9 +31,9 @@ final class GeneradorPdfQr
         $tamano = $pdf->getTemplateSize($paginaId);
 
         return [
-            'width' => (float)$tamano['width'],
-            'height' => (float)$tamano['height'],
-            'orientation' => (string)$tamano['orientation'],
+            'width' => (float) $tamano['width'],
+            'height' => (float) $tamano['height'],
+            'orientation' => (string) $tamano['orientation'],
         ];
     }
 
@@ -39,13 +41,14 @@ final class GeneradorPdfQr
     {
         $rutaPdfOriginal = $certificado->ruta_pdf_original;
 
-        if (!$rutaPdfOriginal) {
+        if (! $rutaPdfOriginal) {
             throw new RuntimeException('La plantilla PDF no existe en el registro.');
         }
 
-        $disco = Storage::disk(self::DISCO);
+        $disco = Storage::disk((string) config('certificados.disk', 'public'));
+        $directorioBorradores = (string) config('certificados.borradores_dir', 'certificados/borradores');
 
-        if (!$disco->exists($rutaPdfOriginal)) {
+        if (! $disco->exists($rutaPdfOriginal)) {
             throw new RuntimeException('No se encontro la plantilla PDF en el almacenamiento.');
         }
 
@@ -56,7 +59,7 @@ final class GeneradorPdfQr
         $pdf->setPrintFooter(false);
         $pdf->SetMargins(0, 0, 0, true);
         $pdf->SetAutoPageBreak(false);
-        $pdf->SetKeywords('CNSM-TOKEN:' . $tokenBorrador);
+        $pdf->SetKeywords('CNSM-TOKEN:'.$tokenBorrador);
 
         $numeroPaginas = $pdf->setSourceFile($rutaOriginal);
 
@@ -72,9 +75,9 @@ final class GeneradorPdfQr
             }
         }
 
-        $disco->makeDirectory(self::DIRECTORIO_BORRADORES);
+        $disco->makeDirectory($directorioBorradores);
 
-        $rutaBorrador = self::DIRECTORIO_BORRADORES . '/' . $certificado->id . '.pdf';
+        $rutaBorrador = $directorioBorradores.'/'.$certificado->id.'.pdf';
         $rutaSalida = $disco->path($rutaBorrador);
 
         $pdf->Output($rutaSalida, 'F');
@@ -100,7 +103,7 @@ final class GeneradorPdfQr
     private function imprimirCodigoQr(Fpdi $pdf, string $url, float $x, float $y): void
     {
         $estiloQr = [
-            'border'  => 0,
+            'border' => 0,
             'padding' => 5,
             'fgcolor' => [0, 0, 0],
             'bgcolor' => [255, 255, 255],
@@ -121,7 +124,7 @@ final class GeneradorPdfQr
 
         $pdf->SetFont('helvetica', '', 7);
         $pdf->SetXY($xTexto, $yTexto);
-        $pdf->Cell(self::QR_ANCHO_BLOQUE, 4, 'Emitido el: ' . $certificado->fecha_emision_formateada, 0, 1, 'C');
+        $pdf->Cell(self::QR_ANCHO_BLOQUE, 4, 'Emitido el: '.$certificado->fecha_emision_formateada, 0, 1, 'C');
 
         $pdf->SetXY($xTexto, $yTexto + 4);
         $pdf->Cell(self::QR_ANCHO_BLOQUE, 4, 'Código de verificación:', 0, 1, 'C');
