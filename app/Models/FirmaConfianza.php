@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 
 #[Fillable([
     'nombre',
-    'ruta_certificado',
+    'ruta_firma',
     'activo',
 ])]
 class FirmaConfianza extends Model

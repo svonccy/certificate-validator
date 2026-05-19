@@ -81,7 +81,7 @@ final class ValidadorFirmaPdf
 
         return FirmaConfianza::query()
             ->where('activo', true)
-            ->pluck('ruta_certificado')
+            ->pluck('ruta_firma')
             ->filter()
             ->map(fn (string $ruta): string => $disco->path($ruta))
             ->filter(fn (string $ruta): bool => is_file($ruta))

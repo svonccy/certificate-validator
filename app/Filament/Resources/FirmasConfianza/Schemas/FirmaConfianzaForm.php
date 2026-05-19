@@ -19,7 +19,7 @@ class FirmaConfianzaForm
                     ->label('Nombre')
                     ->required()
                     ->maxLength(255),
-                FileUpload::make('ruta_certificado')
+                FileUpload::make('ruta_firma')
                     ->label('Certificado (CA)')
                     ->acceptedFileTypes([
                         'application/x-x509-ca-cert',
