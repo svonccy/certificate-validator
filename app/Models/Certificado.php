@@ -52,6 +52,19 @@ class Certificado extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::deleting(function (self $certificado): void {
+            if ($certificado->isForceDeleting()) {
+                $certificado->firmaDigital()->withTrashed()->forceDelete();
+
+                return;
+            }
+
+            $certificado->firmaDigital()->delete();
+        });
+    }
+
     /**
      * Accesador para la fecha de emisión formateada (d/m/Y).
      * Usado por el generador de PDF.
