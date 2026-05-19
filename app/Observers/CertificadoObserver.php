@@ -37,7 +37,7 @@ class CertificadoObserver
      */
     public function restored(Certificado $certificado): void
     {
-        //
+        $certificado->firmaDigital()->withTrashed()->restore();
     }
 
     /**
