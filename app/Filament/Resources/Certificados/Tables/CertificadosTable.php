@@ -72,6 +72,7 @@ class CertificadosTable
                             FileUpload::make('pdf_firmado')
                                 ->label('PDF firmado')
                                 ->acceptedFileTypes(['application/pdf'])
+                                ->maxSize(10240)
                                 ->disk('public')
                                 ->directory('certificados/firmados')
                                 ->required()

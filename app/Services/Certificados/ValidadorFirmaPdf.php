@@ -42,6 +42,10 @@ final class ValidadorFirmaPdf
         $comando = ['python3', $rutaScript, $rutaAbsoluta];
 
         if ($tokenBorrador) {
+            if (! preg_match('/^[0-9a-fA-F-]{36}$/', $tokenBorrador)) {
+                throw new RuntimeException('El token del borrador no tiene un formato valido.');
+            }
+
             $comando[] = '--token';
             $comando[] = $tokenBorrador;
         }
@@ -95,15 +99,37 @@ final class ValidadorFirmaPdf
      */
     private function obtenerEntornoProceso(array $extra): array
     {
-        $base = array_merge($_SERVER, $_ENV);
+        $permitidos = [
+            'PATH',
+            'HOME',
+            'USER',
+            'LOGNAME',
+            'LANG',
+            'LC_ALL',
+            'LC_CTYPE',
+            'TMPDIR',
+            'TEMP',
+            'TMP',
+            'PYTHONPATH',
+            'PYTHONHOME',
+            'VIRTUAL_ENV',
+        ];
 
-        $base = array_filter(
-            $base,
-            static fn ($value, $key): bool => is_string($key) && (is_scalar($value) || $value === null),
-            ARRAY_FILTER_USE_BOTH
-        );
+        $base = [];
 
-        $base = array_map(static fn ($value): string => (string) $value, $base);
+        foreach ($permitidos as $clave) {
+            $valor = $_SERVER[$clave] ?? $_ENV[$clave] ?? getenv($clave);
+
+            if ($valor === false || $valor === null) {
+                continue;
+            }
+
+            if (! is_scalar($valor)) {
+                continue;
+            }
+
+            $base[$clave] = (string) $valor;
+        }
 
         return array_merge($base, $extra);
     }
