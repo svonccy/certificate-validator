@@ -15,6 +15,8 @@ final class ValidadorFirmaPdf implements SignatureValidatorContract
 
     private const TIMEOUT = 60;
 
+    public function __construct(private readonly SignatureResultParser $parser) {}
+
     /**
      * @return array<string, mixed>
      */
@@ -55,17 +57,7 @@ final class ValidadorFirmaPdf implements SignatureValidatorContract
         $proceso->setTimeout($timeout > 0 ? $timeout : self::TIMEOUT);
         $proceso->run();
 
-        $salida = trim($proceso->getOutput());
-
-        if ($salida === '') {
-            throw new RuntimeException('El validador no devolvio respuesta.');
-        }
-
-        $resultado = json_decode($salida, true);
-
-        if (! is_array($resultado)) {
-            throw new RuntimeException('Respuesta invalida del validador.');
-        }
+        $resultado = $this->parser->parse($proceso->getOutput());
 
         if (! $proceso->isSuccessful()) {
             $motivo = $resultado['motivo'] ?? null;
