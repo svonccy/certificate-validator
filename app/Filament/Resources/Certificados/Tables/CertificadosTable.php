@@ -62,12 +62,13 @@ class CertificadosTable
                                 ->label('PDF firmado')
                                 ->acceptedFileTypes(['application/pdf'])
                                 ->maxSize(10240)
-                                ->disk('public')
-                                ->directory('certificados/firmados')
+                                ->disk(config('certificados.disk', 'public'))
+                                ->directory(config('certificados.firmados_dir', 'certificados/firmados'))
                                 ->required()
                                 ->preventFilePathTampering(),
                         ])
                         ->action(function (array $data, Certificado $record, ValidadorFirmaPdf $validador): void {
+                            $disk = (string) config('certificados.disk', 'public');
                             $rutaPdfFirmado = $data['pdf_firmado'] ?? null;
 
                             if (! is_string($rutaPdfFirmado) || $rutaPdfFirmado === '') {
@@ -79,7 +80,7 @@ class CertificadosTable
                                 return;
                             }
 
-                            if (! Storage::disk('public')->exists($rutaPdfFirmado)) {
+                            if (! Storage::disk($disk)->exists($rutaPdfFirmado)) {
                                 Notification::make()
                                     ->title('No se encontro el PDF firmado')
                                     ->danger()
@@ -117,6 +118,17 @@ class CertificadosTable
                             $cadenaConfiable = (bool) Arr::get($resultado, 'firma.cadena_confiable', false);
                             $fechaFirma = Arr::get($resultado, 'firma.fecha_firma');
                             $fechaFirma = $fechaFirma ? Carbon::parse($fechaFirma) : null;
+                            $hashDocumento = Arr::get($resultado, 'firma.hash_pdf');
+
+                            if (! is_string($hashDocumento) || $hashDocumento === '') {
+                                Notification::make()
+                                    ->title('Hash del PDF firmado no disponible')
+                                    ->body('El validador no devolvio el hash del documento firmado.')
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
 
                             $estado = match (true) {
                                 $esValido && $cadenaConfiable => EstadoCertificado::Valido,
@@ -124,7 +136,7 @@ class CertificadosTable
                                 default => EstadoCertificado::Rechazado,
                             };
 
-                            DB::transaction(function () use ($record, $rutaPdfFirmado, $estado, $esValido, $fechaFirma, $resultado): void {
+                            DB::transaction(function () use ($record, $rutaPdfFirmado, $estado, $esValido, $fechaFirma, $resultado, $hashDocumento): void {
                                 $record->forceFill([
                                     'ruta_pdf_firmado' => $rutaPdfFirmado,
                                     'estado' => $estado,
@@ -137,7 +149,7 @@ class CertificadosTable
                                         'fecha_firma' => $fechaFirma,
                                         'serial' => Arr::get($resultado, 'firma.serial'),
                                         'algoritmo' => Arr::get($resultado, 'firma.algoritmo'),
-                                        'hash_documento' => (string) Arr::get($resultado, 'firma.hash_pdf', ''),
+                                        'hash_documento' => $hashDocumento,
                                         'notario_nombre' => Arr::get($resultado, 'firmante.nombre'),
                                         'notario_documento' => Arr::get($resultado, 'firmante.documento'),
                                         'metadatos_completos' => $resultado,
@@ -221,7 +233,7 @@ class CertificadosTable
                         ->url(fn (Certificado $record): string => route('certificados.descargar-borrador', $record))
                         ->openUrlInNewTab()
                         ->visible(fn (Certificado $record): bool => (bool) $record->getAttribute('ruta_pdf_borrador'))
-                        ->disabled(fn (Certificado $record): bool => ! Storage::disk('public')->exists((string) $record->getAttribute('ruta_pdf_borrador'))),
+                        ->disabled(fn (Certificado $record): bool => ! Storage::disk((string) config('certificados.disk', 'public'))->exists((string) $record->getAttribute('ruta_pdf_borrador'))),
 
                     EditAction::make(),
                 ]),
