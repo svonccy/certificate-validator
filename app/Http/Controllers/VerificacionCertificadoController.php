@@ -23,13 +23,15 @@ class VerificacionCertificadoController extends Controller
             'titular' => $certificado->titular,
             'firmaDigital' => $firma,
             'estadoTexto' => match ($certificado->estado) {
-                'FIRMADO' => 'Válido',
-                'ANULADO' => 'Anulado',
+                'VALIDO' => 'Válido',
+                'RECHAZADO' => 'Rechazado',
+                'PENDIENTE' => 'Pendiente',
                 default => 'Pendiente',
             },
             'estadoClase' => match ($certificado->estado) {
-                'FIRMADO' => 'success',
-                'ANULADO' => 'danger',
+                'VALIDO' => 'success',
+                'RECHAZADO' => 'danger',
+                'PENDIENTE' => 'warning',
                 default => 'warning',
             },
 
