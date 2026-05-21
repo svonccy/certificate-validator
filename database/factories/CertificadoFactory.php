@@ -36,6 +36,7 @@ class CertificadoFactory extends Factory
             'fecha_emision' => now(),
             'ruta_pdf_original' => 'certificados/originales/'.Str::uuid().'.pdf',
             'ruta_pdf_borrador' => 'certificados/borradores/'.Str::uuid().'.pdf',
+            'qr_pagina' => 1,
             'token_borrador' => (string) Str::uuid(),
             'ruta_pdf_firmado' => 'certificados/firmados/'.Str::uuid().'.pdf',
         ];

@@ -19,10 +19,7 @@ class Certificado extends Model
     /** @use HasFactory<CertificadoFactory> */
     use HasFactory, HasUlids, SoftDeletes;
 
-    /**
-     * Los atributos que se pueden asignar masivamente.
-     * Fíjate cómo desaparecieron todas las columnas de la firma y el DNI.
-     */
+
     protected $fillable = [
         'titular_id', // El enlace a la tabla titulares
         'codigo_certificado',
@@ -30,6 +27,8 @@ class Certificado extends Model
         'fecha_emision',
         'ruta_pdf_original',
         'ruta_pdf_borrador',
+        'datos_qr',
+        'qr_pagina',
         'token_borrador',
         'ruta_pdf_firmado',
     ];
@@ -39,6 +38,7 @@ class Certificado extends Model
      */
     protected $attributes = [
         'estado' => 'PENDIENTE',
+        'qr_pagina' => 1,
     ];
 
     /**
@@ -49,6 +49,8 @@ class Certificado extends Model
         return [
             'fecha_emision' => 'datetime',
             'estado' => EstadoCertificado::class,
+            'datos_qr' => 'array',
+            'qr_pagina' => 'integer',
         ];
     }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Certificados\Tables;
 
+use App\Enums\PresetQr;
 use App\Models\Certificado;
 use App\Services\Certificados\AdjuntarFirmadoService;
 use App\Services\Certificados\GeneradorPdfQr;
@@ -12,7 +13,10 @@ use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
@@ -98,8 +102,50 @@ class CertificadosTable
                     Action::make('generar_qr')
                         ->label('Generar QR')
                         ->icon('heroicon-o-qr-code')
-                        ->requiresConfirmation()
-                        ->action(function (Certificado $record, GeneradorPdfQr $generador): void {
+                        ->modalHeading('Configurar QR')
+                        ->modalSubmitActionLabel('Generar borrador')
+                        ->form([
+                            Select::make('qr_preset')
+                                ->label('Posición del QR')
+                                ->options(PresetQr::opciones())
+                                ->required()
+                                ->live(),
+                            TextInput::make('qr_lado')
+                                ->label('Lado del QR (mm)')
+                                ->numeric()
+                                ->minValue(10)
+                                ->required(),
+                            TextInput::make('qr_pagina')
+                                ->label('Página')
+                                ->numeric()
+                                ->minValue(1)
+                                ->required(),
+                            TextInput::make('qr_x')
+                                ->label('Coordenada X (mm)')
+                                ->numeric()
+                                ->required(fn (Get $get): bool => $get('qr_preset') === PresetQr::Manual->value)
+                                ->hidden(fn (Get $get): bool => $get('qr_preset') !== PresetQr::Manual->value),
+                            TextInput::make('qr_y')
+                                ->label('Coordenada Y (mm)')
+                                ->numeric()
+                                ->required(fn (Get $get): bool => $get('qr_preset') === PresetQr::Manual->value)
+                                ->hidden(fn (Get $get): bool => $get('qr_preset') !== PresetQr::Manual->value),
+                        ])
+                        ->fillForm(function (Certificado $record): array {
+                            $defaults = config('certificados.defaults', []);
+                            $defaults = is_array($defaults) ? $defaults : [];
+                            $datosQr = $record->getAttribute('datos_qr');
+                            $datosQr = is_array($datosQr) ? $datosQr : [];
+
+                            return [
+                                'qr_preset' => (string) ($datosQr['preset'] ?? $defaults['preset'] ?? PresetQr::SuperiorIzquierda->value),
+                                'qr_lado' => $datosQr['lado'] ?? $defaults['lado'] ?? 30,
+                                'qr_x' => $datosQr['x'] ?? $defaults['x'] ?? null,
+                                'qr_y' => $datosQr['y'] ?? $defaults['y'] ?? null,
+                                'qr_pagina' => $record->getAttribute('qr_pagina') ?? ($defaults['pagina'] ?? 1),
+                            ];
+                        })
+                        ->action(function (array $data, Certificado $record, GeneradorPdfQr $generador): void {
                             if (! $record->getAttribute('ruta_pdf_original')) {
                                 Notification::make()
                                     ->title('No hay PDF original')
@@ -110,7 +156,35 @@ class CertificadosTable
                                 return;
                             }
 
+                            $defaults = config('certificados.defaults', []);
+                            $defaults = is_array($defaults) ? $defaults : [];
+
                             $tokenBorrador = $record->getAttribute('token_borrador') ?: (string) Str::uuid();
+                            $preset = (string) ($data['qr_preset'] ?? $defaults['preset'] ?? PresetQr::SuperiorIzquierda->value);
+                            $lado = is_numeric($data['qr_lado'] ?? null) ? (float) $data['qr_lado'] : null;
+                            $x = is_numeric($data['qr_x'] ?? null) ? (float) $data['qr_x'] : null;
+                            $y = is_numeric($data['qr_y'] ?? null) ? (float) $data['qr_y'] : null;
+                            $pagina = is_numeric($data['qr_pagina'] ?? null)
+                                ? max((int) $data['qr_pagina'], 1)
+                                : (int) ($defaults['pagina'] ?? 1);
+
+                            if ($preset !== PresetQr::Manual->value) {
+                                $x = null;
+                                $y = null;
+                            }
+
+                            $datosQr = array_filter([
+                                'preset' => $preset,
+                                'lado' => $lado,
+                                'x' => $x,
+                                'y' => $y,
+                            ], static fn ($valor): bool => $valor !== null);
+
+                            $record->forceFill([
+                                'datos_qr' => $datosQr,
+                                'qr_pagina' => $pagina,
+                                'token_borrador' => $tokenBorrador,
+                            ]);
 
                             try {
                                 $rutaBorrador = $generador->generarBorrador($record, $tokenBorrador);
@@ -126,7 +200,6 @@ class CertificadosTable
 
                             $record->forceFill([
                                 'ruta_pdf_borrador' => $rutaBorrador,
-                                'token_borrador' => $tokenBorrador,
                             ])->save();
 
                             Notification::make()

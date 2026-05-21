@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Certificados;
 
+use App\DTO\DatosQr;
+use App\DTO\PosicionQr;
+use App\Enums\PresetQr;
 use App\Models\Certificado;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
@@ -11,17 +14,15 @@ use setasign\Fpdi\Tcpdf\Fpdi;
 
 final class GeneradorPdfQr
 {
-    private const QR_LADO = 30.0;
-
-    private const QR_ANCHO_BLOQUE = 36.0;
-
-    private const QR_ALTO_TEXTO = 8.0;
-
     private const TEXTO_GAP = 1.0;
 
-    private const QR_MARGEN_X = 5.0;
+    private const TEXTO_LINEA_ALTO = 4.0;
 
-    private const QR_MARGEN_Y = 5.0;
+    private const TEXTO_LINEAS = 3;
+
+    private const TEXTO_ALTO_TOTAL = self::TEXTO_LINEA_ALTO * self::TEXTO_LINEAS;
+
+    public function __construct(private readonly CalculadorPosicionQr $calculadorPosicion) {}
 
     /**
      * @return array{width: float, height: float, orientation: string}
@@ -62,6 +63,8 @@ final class GeneradorPdfQr
         $pdf->SetKeywords('CNSM-TOKEN:'.$tokenBorrador);
 
         $numeroPaginas = $pdf->setSourceFile($rutaOriginal);
+        $datosQr = DatosQr::desdeRegistro($certificado, $this->obtenerDefaultsQr());
+        $paginaObjetivo = $this->ajustarPagina($datosQr->pagina, $numeroPaginas);
 
         for ($pagina = 1; $pagina <= $numeroPaginas; $pagina++) {
             $paginaId = $pdf->importPage($pagina);
@@ -70,8 +73,14 @@ final class GeneradorPdfQr
             $pdf->AddPage($tamano['orientation'], [$tamano['width'], $tamano['height']]);
             $pdf->useTemplate($paginaId);
 
-            if ($pagina === 1) {
-                $this->dibujarQr($pdf, $tamano, $certificado);
+            if ($pagina === $paginaObjetivo) {
+                $posicion = $this->calculadorPosicion->calcular(
+                    $datosQr,
+                    $tamano,
+                    self::TEXTO_GAP,
+                    self::TEXTO_ALTO_TOTAL,
+                );
+                $this->dibujarQr($pdf, $certificado, $posicion);
             }
         }
 
@@ -85,22 +94,22 @@ final class GeneradorPdfQr
         return $rutaBorrador;
     }
 
-    /**
-     * @param  array{width: float, height: float, orientation: string}  $tamano
-     */
-    private function dibujarQr(Fpdi $pdf, array $tamano, Certificado $certificado): void
+    private function dibujarQr(Fpdi $pdf, Certificado $certificado, PosicionQr $posicion): void
     {
         $url = route('certificados.verificar', $certificado);
 
-        // Posición actual: Esquina Superior Izquierda
-        $xBase = self::QR_MARGEN_X;
-        $yBase = self::QR_MARGEN_Y;
-
-        $this->imprimirCodigoQr($pdf, $url, $xBase, $yBase);
-        $this->imprimirTextosAdicionales($pdf, $certificado, $xBase, $yBase);
+        $this->imprimirCodigoQr($pdf, $url, $posicion->x, $posicion->y, $posicion->lado);
+        $this->imprimirTextosAdicionales(
+            $pdf,
+            $certificado,
+            $posicion->x,
+            $posicion->y,
+            $posicion->lado,
+            $posicion->anchoBloque,
+        );
     }
 
-    private function imprimirCodigoQr(Fpdi $pdf, string $url, float $x, float $y): void
+    private function imprimirCodigoQr(Fpdi $pdf, string $url, float $x, float $y, float $lado): void
     {
         $estiloQr = [
             'border' => 0,
@@ -109,28 +118,68 @@ final class GeneradorPdfQr
             'bgcolor' => [255, 255, 255],
         ];
 
-        $pdf->write2DBarcode($url, 'QRCODE,H', $x, $y, self::QR_LADO, self::QR_LADO, $estiloQr, 'N');
+        $pdf->write2DBarcode($url, 'QRCODE,H', $x, $y, $lado, $lado, $estiloQr, 'N');
     }
 
-    private function imprimirTextosAdicionales(Fpdi $pdf, Certificado $certificado, float $xQr, float $yQr): void
-    {
+    private function imprimirTextosAdicionales(
+        Fpdi $pdf,
+        Certificado $certificado,
+        float $xQr,
+        float $yQr,
+        float $lado,
+        float $anchoBloque,
+    ): void {
         $pdf->SetTextColor(0);
 
         // Calcular la posición Y inicial para los textos (debajo del QR + espacio)
-        $yTexto = $yQr + self::QR_LADO + self::TEXTO_GAP;
+        $yTexto = $yQr + $lado + self::TEXTO_GAP;
 
         // Calcular retroceso en X para centrar el bloque de texto sobre el QR
-        $xTexto = $xQr - ((self::QR_ANCHO_BLOQUE - self::QR_LADO) / 2);
+        $xTexto = $xQr - (($anchoBloque - $lado) / 2);
 
         $pdf->SetFont('helvetica', '', 7);
         $pdf->SetXY($xTexto, $yTexto);
-        $pdf->Cell(self::QR_ANCHO_BLOQUE, 4, 'Emitido el: '.$certificado->fecha_emision_formateada, 0, 1, 'C');
+        $pdf->Cell($anchoBloque, self::TEXTO_LINEA_ALTO, 'Emitido el: '.$certificado->fecha_emision_formateada, 0, 1, 'C');
 
-        $pdf->SetXY($xTexto, $yTexto + 4);
-        $pdf->Cell(self::QR_ANCHO_BLOQUE, 4, 'Código de verificación:', 0, 1, 'C');
+        // $pdf->SetXY($xTexto, $yTexto + self::TEXTO_LINEA_ALTO);
+        // $pdf->Cell($anchoBloque, self::TEXTO_LINEA_ALTO, 'Código de verificación:', 0, 1, 'C');
 
-        $pdf->SetFont('helvetica', 'B', 7);
-        $pdf->SetXY($xTexto, $yTexto + self::QR_ALTO_TEXTO);
-        $pdf->Cell(self::QR_ANCHO_BLOQUE, 4, $certificado->codigo_certificado, 0, 1, 'C');
+        // $pdf->SetFont('helvetica', 'B', 7);
+        // $pdf->SetXY($xTexto, $yTexto + (self::TEXTO_LINEA_ALTO * 2));
+        // $pdf->Cell($anchoBloque, self::TEXTO_LINEA_ALTO, $certificado->codigo_certificado, 0, 1, 'C');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function obtenerDefaultsQr(): array
+    {
+        $defaults = config('certificados.defaults');
+
+        return is_array($defaults) ? $defaults : [
+            'preset' => PresetQr::SuperiorIzquierda->value,
+            'lado' => 30.0,
+            'margen_x' => 5.0,
+            'margen_y' => 5.0,
+            'ancho_bloque_factor' => 1.2,
+            'pagina' => 1,
+        ];
+    }
+
+    private function ajustarPagina(int $pagina, int $totalPaginas): int
+    {
+        if ($totalPaginas < 1) {
+            return 1;
+        }
+
+        if ($pagina < 1) {
+            return 1;
+        }
+
+        if ($pagina > $totalPaginas) {
+            return $totalPaginas;
+        }
+
+        return $pagina;
     }
 }
