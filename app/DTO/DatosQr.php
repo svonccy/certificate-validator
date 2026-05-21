@@ -21,15 +21,14 @@ final readonly class DatosQr
     ) {}
 
     /**
-     * @param array<string, mixed> $defaults
+     * @param  array<string, mixed>  $defaults
      */
     public static function desdeRegistro(Certificado $certificado, array $defaults): self
     {
         $datosQr = $certificado->getAttribute('datos_qr');
         $datosQr = is_array($datosQr) ? $datosQr : [];
 
-        $preset = PresetQr::tryFrom((string) ($datosQr['preset'] ?? $defaults['preset'] ?? PresetQr::SuperiorIzquierda->value))
-            ?? PresetQr::SuperiorIzquierda;
+        $preset = PresetQr::desdeValor((string) ($datosQr['preset'] ?? $defaults['preset'] ?? PresetQr::Superior1->value));
 
         $lado = self::normalizarFloat($datosQr['lado'] ?? $defaults['lado'] ?? 30.0, 30.0);
         $x = self::normalizarFloatOpcional($datosQr['x'] ?? $defaults['x'] ?? null);

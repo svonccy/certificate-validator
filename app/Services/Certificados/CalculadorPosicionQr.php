@@ -10,43 +10,98 @@ use App\Enums\PresetQr;
 
 final class CalculadorPosicionQr
 {
+    private const FILAS = 3;
+
+    private const COLUMNAS = 5;
+
     /**
-     * @param array{width: float, height: float} $tamano
+     * @param  array{width: float, height: float}  $tamano
      */
     public function calcular(DatosQr $datosQr, array $tamano, float $gapTexto, float $altoTexto): PosicionQr
     {
         $lado = $datosQr->lado;
         $anchoBloque = max($lado, $lado * $datosQr->anchoBloqueFactor);
         $altoBloque = $lado + $gapTexto + $altoTexto;
+        $preset = $datosQr->preset->normalizado();
 
-        [$x, $y] = $this->calcularBase($datosQr, $tamano, $anchoBloque, $altoBloque);
+        $textoArriba = $this->resolverTextoArriba($preset, $datosQr, $tamano, $gapTexto, $altoTexto);
+        $offsetTexto = $textoArriba ? ($gapTexto + $altoTexto) : 0.0;
 
-        $x = $this->ajustarDentro($x, $tamano['width'] - $anchoBloque);
-        $y = $this->ajustarDentro($y, $tamano['height'] - $altoBloque);
+        if ($preset === PresetQr::Manual) {
+            $xQr = $datosQr->x ?? $datosQr->margenX;
+            $yQr = $datosQr->y ?? $datosQr->margenY;
+
+            $xBloque = $xQr - (($anchoBloque - $lado) / 2);
+            $yBloque = $yQr - $offsetTexto;
+        } else {
+            [$fila, $columna] = $this->obtenerCoordenadasCuadricula($preset);
+
+            $xBloque = $this->calcularPosicion(
+                $tamano['width'],
+                $anchoBloque,
+                $datosQr->margenX,
+                $columna,
+                self::COLUMNAS,
+            );
+            $yBloque = $this->calcularPosicion(
+                $tamano['height'],
+                $altoBloque,
+                $datosQr->margenY,
+                $fila,
+                self::FILAS,
+            );
+        }
+
+        $xBloque = $this->ajustarDentro($xBloque, $tamano['width'] - $anchoBloque);
+        $yBloque = $this->ajustarDentro($yBloque, $tamano['height'] - $altoBloque);
+
+        $xQr = $xBloque + (($anchoBloque - $lado) / 2);
+        $yQr = $yBloque + $offsetTexto;
 
         return new PosicionQr(
-            x: $x,
-            y: $y,
+            xQr: $xQr,
+            yQr: $yQr,
             lado: $lado,
             anchoBloque: $anchoBloque,
             altoBloque: $altoBloque,
+            textoArriba: $textoArriba,
         );
     }
 
-    /**
-     * @param array{width: float, height: float} $tamano
-     * @return array{0: float, 1: float}
-     */
-    private function calcularBase(DatosQr $datosQr, array $tamano, float $anchoBloque, float $altoBloque): array
+    private function resolverTextoArriba(PresetQr $preset, DatosQr $datosQr, array $tamano, float $gapTexto, float $altoTexto): bool
     {
-        return match ($datosQr->preset) {
-            PresetQr::SuperiorIzquierda => [$datosQr->margenX, $datosQr->margenY],
-            PresetQr::SuperiorDerecha => [$tamano['width'] - $anchoBloque - $datosQr->margenX, $datosQr->margenY],
-            PresetQr::InferiorIzquierda => [$datosQr->margenX, $tamano['height'] - $altoBloque - $datosQr->margenY],
-            PresetQr::InferiorDerecha => [$tamano['width'] - $anchoBloque - $datosQr->margenX, $tamano['height'] - $altoBloque - $datosQr->margenY],
-            PresetQr::Centro => [($tamano['width'] - $anchoBloque) / 2, ($tamano['height'] - $altoBloque) / 2],
-            PresetQr::Manual => [$datosQr->x ?? $datosQr->margenX, $datosQr->y ?? $datosQr->margenY],
-        };
+        if ($preset === PresetQr::Manual) {
+            $yQr = $datosQr->y ?? $datosQr->margenY;
+            $alturaAbajo = $yQr + $datosQr->lado + $gapTexto + $altoTexto;
+
+            return $alturaAbajo > ($tamano['height'] - $datosQr->margenY);
+        }
+
+        $coordenadas = $preset->coordenadasCuadricula();
+
+        return is_array($coordenadas) && $coordenadas[0] === self::FILAS;
+    }
+
+    /**
+     * @return array{0: int, 1: int}
+     */
+    private function obtenerCoordenadasCuadricula(PresetQr $preset): array
+    {
+        $coordenadas = $preset->coordenadasCuadricula();
+
+        return $coordenadas ?? [1, 1];
+    }
+
+    private function calcularPosicion(float $tamano, float $bloque, float $margen, int $indice, int $total): float
+    {
+        if ($total < 2) {
+            return max(0.0, $margen);
+        }
+
+        $disponible = max(0.0, $tamano - $bloque - (2 * $margen));
+        $paso = $disponible / ($total - 1);
+
+        return $margen + (($indice - 1) * $paso);
     }
 
     private function ajustarDentro(float $valor, float $maximo): float

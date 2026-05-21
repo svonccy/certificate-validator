@@ -7,10 +7,11 @@ namespace App\DTO;
 final readonly class PosicionQr
 {
     public function __construct(
-        public float $x,
-        public float $y,
+        public float $xQr,
+        public float $yQr,
         public float $lado,
         public float $anchoBloque,
         public float $altoBloque,
+        public bool $textoArriba,
     ) {}
 }

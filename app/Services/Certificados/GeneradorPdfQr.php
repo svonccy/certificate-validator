@@ -18,7 +18,7 @@ final class GeneradorPdfQr
 
     private const TEXTO_LINEA_ALTO = 4.0;
 
-    private const TEXTO_LINEAS = 3;
+    private const TEXTO_LINEAS = 1;
 
     private const TEXTO_ALTO_TOTAL = self::TEXTO_LINEA_ALTO * self::TEXTO_LINEAS;
 
@@ -98,14 +98,15 @@ final class GeneradorPdfQr
     {
         $url = route('certificados.verificar', $certificado);
 
-        $this->imprimirCodigoQr($pdf, $url, $posicion->x, $posicion->y, $posicion->lado);
+        $this->imprimirCodigoQr($pdf, $url, $posicion->xQr, $posicion->yQr, $posicion->lado);
         $this->imprimirTextosAdicionales(
             $pdf,
             $certificado,
-            $posicion->x,
-            $posicion->y,
+            $posicion->xQr,
+            $posicion->yQr,
             $posicion->lado,
             $posicion->anchoBloque,
+            $posicion->textoArriba,
         );
     }
 
@@ -128,11 +129,14 @@ final class GeneradorPdfQr
         float $yQr,
         float $lado,
         float $anchoBloque,
+        bool $textoArriba,
     ): void {
         $pdf->SetTextColor(0);
 
-        // Calcular la posición Y inicial para los textos (debajo del QR + espacio)
-        $yTexto = $yQr + $lado + self::TEXTO_GAP;
+        // Calcular la posición Y inicial para los textos según la fila.
+        $yTexto = $textoArriba
+            ? $yQr - self::TEXTO_GAP - self::TEXTO_ALTO_TOTAL
+            : $yQr + $lado + self::TEXTO_GAP;
 
         // Calcular retroceso en X para centrar el bloque de texto sobre el QR
         $xTexto = $xQr - (($anchoBloque - $lado) / 2);
@@ -157,7 +161,7 @@ final class GeneradorPdfQr
         $defaults = config('certificados.defaults');
 
         return is_array($defaults) ? $defaults : [
-            'preset' => PresetQr::SuperiorIzquierda->value,
+            'preset' => PresetQr::Superior1->value,
             'lado' => 30.0,
             'margen_x' => 5.0,
             'margen_y' => 5.0,

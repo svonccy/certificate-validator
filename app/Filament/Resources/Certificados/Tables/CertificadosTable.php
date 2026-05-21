@@ -13,10 +13,12 @@ use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Support\Enums\GridDirection;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
@@ -105,10 +107,17 @@ class CertificadosTable
                         ->modalHeading('Configurar QR')
                         ->modalSubmitActionLabel('Generar borrador')
                         ->form([
-                            Select::make('qr_preset')
+                            ToggleButtons::make('qr_preset_grid')
                                 ->label('Posición del QR')
-                                ->options(PresetQr::opciones())
-                                ->required()
+                                ->options(PresetQr::opcionesCuadricula())
+                                ->columns(5)
+                                ->gridDirection(GridDirection::Row)
+                                ->required(fn (Get $get): bool => ! (bool) $get('qr_manual'))
+                                ->hidden(fn (Get $get): bool => (bool) $get('qr_manual'))
+                                ->live()
+                                ->columnSpanFull(),
+                            Toggle::make('qr_manual')
+                                ->label('Manual')
                                 ->live(),
                             TextInput::make('qr_lado')
                                 ->label('Lado del QR (mm)')
@@ -123,13 +132,13 @@ class CertificadosTable
                             TextInput::make('qr_x')
                                 ->label('Coordenada X (mm)')
                                 ->numeric()
-                                ->required(fn (Get $get): bool => $get('qr_preset') === PresetQr::Manual->value)
-                                ->hidden(fn (Get $get): bool => $get('qr_preset') !== PresetQr::Manual->value),
+                                ->required(fn (Get $get): bool => (bool) $get('qr_manual'))
+                                ->hidden(fn (Get $get): bool => ! (bool) $get('qr_manual')),
                             TextInput::make('qr_y')
                                 ->label('Coordenada Y (mm)')
                                 ->numeric()
-                                ->required(fn (Get $get): bool => $get('qr_preset') === PresetQr::Manual->value)
-                                ->hidden(fn (Get $get): bool => $get('qr_preset') !== PresetQr::Manual->value),
+                                ->required(fn (Get $get): bool => (bool) $get('qr_manual'))
+                                ->hidden(fn (Get $get): bool => ! (bool) $get('qr_manual')),
                         ])
                         ->fillForm(function (Certificado $record): array {
                             $defaults = config('certificados.defaults', []);
@@ -137,8 +146,13 @@ class CertificadosTable
                             $datosQr = $record->getAttribute('datos_qr');
                             $datosQr = is_array($datosQr) ? $datosQr : [];
 
+                            $presetValor = (string) ($datosQr['preset'] ?? $defaults['preset'] ?? PresetQr::Superior1->value);
+                            $preset = PresetQr::desdeValor($presetValor);
+                            $esManual = $preset === PresetQr::Manual;
+
                             return [
-                                'qr_preset' => (string) ($datosQr['preset'] ?? $defaults['preset'] ?? PresetQr::SuperiorIzquierda->value),
+                                'qr_preset_grid' => $esManual ? PresetQr::Superior1->value : $preset->value,
+                                'qr_manual' => $esManual,
                                 'qr_lado' => $datosQr['lado'] ?? $defaults['lado'] ?? 30,
                                 'qr_x' => $datosQr['x'] ?? $defaults['x'] ?? null,
                                 'qr_y' => $datosQr['y'] ?? $defaults['y'] ?? null,
@@ -160,7 +174,11 @@ class CertificadosTable
                             $defaults = is_array($defaults) ? $defaults : [];
 
                             $tokenBorrador = $record->getAttribute('token_borrador') ?: (string) Str::uuid();
-                            $preset = (string) ($data['qr_preset'] ?? $defaults['preset'] ?? PresetQr::SuperiorIzquierda->value);
+                            $usarManual = (bool) ($data['qr_manual'] ?? false);
+                            $presetValor = $usarManual
+                                ? PresetQr::Manual->value
+                                : (string) ($data['qr_preset_grid'] ?? $defaults['preset'] ?? PresetQr::Superior1->value);
+                            $preset = PresetQr::desdeValor($presetValor);
                             $lado = is_numeric($data['qr_lado'] ?? null) ? (float) $data['qr_lado'] : null;
                             $x = is_numeric($data['qr_x'] ?? null) ? (float) $data['qr_x'] : null;
                             $y = is_numeric($data['qr_y'] ?? null) ? (float) $data['qr_y'] : null;
@@ -168,13 +186,13 @@ class CertificadosTable
                                 ? max((int) $data['qr_pagina'], 1)
                                 : (int) ($defaults['pagina'] ?? 1);
 
-                            if ($preset !== PresetQr::Manual->value) {
+                            if ($preset !== PresetQr::Manual) {
                                 $x = null;
                                 $y = null;
                             }
 
                             $datosQr = array_filter([
-                                'preset' => $preset,
+                                'preset' => $preset->value,
                                 'lado' => $lado,
                                 'x' => $x,
                                 'y' => $y,

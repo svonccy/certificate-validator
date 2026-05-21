@@ -6,9 +6,9 @@ use App\DTO\DatosQr;
 use App\Enums\PresetQr;
 use App\Services\Certificados\CalculadorPosicionQr;
 
-it('calcula la posicion superior izquierda con margen', function () {
+it('calcula la posicion superior 1 con margen', function () {
     $datosQr = new DatosQr(
-        preset: PresetQr::SuperiorIzquierda,
+        preset: PresetQr::Superior1,
         lado: 30.0,
         x: null,
         y: null,
@@ -20,15 +20,16 @@ it('calcula la posicion superior izquierda con margen', function () {
 
     $tamano = ['width' => 200.0, 'height' => 100.0];
 
-    $posicion = (new CalculadorPosicionQr())->calcular($datosQr, $tamano, 1.0, 12.0);
+    $posicion = (new CalculadorPosicionQr)->calcular($datosQr, $tamano, 1.0, 12.0);
 
-    expect($posicion->x)->toBe(5.0)
-        ->and($posicion->y)->toBe(7.0);
+    expect($posicion->xQr)->toBe(8.0)
+        ->and($posicion->yQr)->toBe(7.0)
+        ->and($posicion->textoArriba)->toBeFalse();
 });
 
-it('calcula la posicion inferior derecha con bloque completo', function () {
+it('calcula la posicion inferior 5 con bloque completo', function () {
     $datosQr = new DatosQr(
-        preset: PresetQr::InferiorDerecha,
+        preset: PresetQr::Inferior5,
         lado: 30.0,
         x: null,
         y: null,
@@ -40,10 +41,11 @@ it('calcula la posicion inferior derecha con bloque completo', function () {
 
     $tamano = ['width' => 200.0, 'height' => 100.0];
 
-    $posicion = (new CalculadorPosicionQr())->calcular($datosQr, $tamano, 1.0, 12.0);
+    $posicion = (new CalculadorPosicionQr)->calcular($datosQr, $tamano, 1.0, 12.0);
 
-    expect($posicion->x)->toBe(159.0)
-        ->and($posicion->y)->toBe(50.0);
+    expect($posicion->xQr)->toBe(162.0)
+        ->and($posicion->yQr)->toBe(63.0)
+        ->and($posicion->textoArriba)->toBeTrue();
 });
 
 it('ajusta coordenadas manuales fuera del rango', function () {
@@ -60,8 +62,9 @@ it('ajusta coordenadas manuales fuera del rango', function () {
 
     $tamano = ['width' => 100.0, 'height' => 80.0];
 
-    $posicion = (new CalculadorPosicionQr())->calcular($datosQr, $tamano, 1.0, 12.0);
+    $posicion = (new CalculadorPosicionQr)->calcular($datosQr, $tamano, 1.0, 12.0);
 
-    expect($posicion->x)->toBe(64.0)
-        ->and($posicion->y)->toBe(0.0);
+    expect($posicion->xQr)->toBe(67.0)
+        ->and($posicion->yQr)->toBe(0.0)
+        ->and($posicion->textoArriba)->toBeFalse();
 });

@@ -19,7 +19,6 @@ class Certificado extends Model
     /** @use HasFactory<CertificadoFactory> */
     use HasFactory, HasUlids, SoftDeletes;
 
-
     protected $fillable = [
         'titular_id', // El enlace a la tabla titulares
         'codigo_certificado',
