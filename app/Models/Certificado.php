@@ -12,12 +12,20 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Certificado extends Model
 {
     /** @use HasFactory<CertificadoFactory> */
-    use HasFactory, HasUlids, SoftDeletes;
+    use HasFactory, HasUlids;
+
+    protected static function booted(): void
+    {
+        static::creating(function (Certificado $certificado) {
+            if (empty($certificado->fecha_emision)) {
+                $certificado->fecha_emision = now();
+            }
+        });
+    }
 
     protected $fillable = [
         'titular_id',

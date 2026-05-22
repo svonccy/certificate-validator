@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Certificados\Schemas;
 
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
@@ -50,22 +48,6 @@ class CertificadoForm
                                                     ->required()
                                                     ->maxLength(255),
                                             ]),
-                                        DatePicker::make('fecha_emision')
-                                            ->label('Fecha de Emisión')
-                                            ->required()
-                                            ->default(now()),
-                                        ToggleButtons::make('estado')
-                                            ->label('Estado')
-                                            ->options([
-                                                'PENDIENTE' => 'Pendiente',
-                                                'FIRMADO' => 'Firmado',
-                                            ])
-                                            ->colors([
-                                                'PENDIENTE' => 'warning',
-                                                'FIRMADO' => 'success',
-                                            ])
-                                            ->inline()
-                                            ->grouped(),
                                     ]),
                             ])
                             ->columnSpan(1),

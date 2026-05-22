@@ -34,22 +34,27 @@ class CertificadosTable
             ->columns([
                 TextColumn::make('codigo_certificado')
                     ->label('Código')
+                    ->width(100)
                     ->searchable(),
                 TextColumn::make('titular.dni')
                     ->label('DNI')
+                    ->width(100)
                     ->searchable(),
                 TextColumn::make('titular.nombre_completo')
                     ->label('Nombre Completo')
                     ->searchable(),
                 TextColumn::make('estado')
                     ->label('Estado')
+                    ->width(100)
                     ->badge(),
                 TextColumn::make('created_at')
                     ->label('Creado')
+                    ->width(100)
                     ->dateTime()
                     ->sortable(),
                 TextColumn::make('updated_at')
-                    ->label('Actualizado')
+                    ->label('Modificado')
+                    ->width(100)
                     ->dateTime()
                     ->sortable(),
             ])
