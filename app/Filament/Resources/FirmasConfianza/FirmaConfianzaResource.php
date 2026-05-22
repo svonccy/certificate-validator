@@ -29,7 +29,7 @@ class FirmaConfianzaResource extends Resource
 
     protected static ?string $navigationLabel = 'Firmas autorizadas';
 
-    protected static string | UnitEnum | null $navigationGroup = 'Certificados';
+    protected static string | UnitEnum | null $navigationGroup = 'Documentos';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentCheck;
 

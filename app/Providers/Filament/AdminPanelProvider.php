@@ -37,8 +37,8 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->brandLogo(url("images/logo/cnsm.png"))
             ->navigationGroups([
-                'Certificados',
-                'Auditoría'
+                'Documentos',
+                'Seguridad'
             ])
             ->middleware([
                 EncryptCookies::class,
