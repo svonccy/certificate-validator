@@ -15,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class FirmaConfianzaResource extends Resource
 {
@@ -27,6 +28,8 @@ class FirmaConfianzaResource extends Resource
     protected static ?string $pluralModelLabel = 'Firmas autorizadas';
 
     protected static ?string $navigationLabel = 'Firmas autorizadas';
+
+    protected static string | UnitEnum | null $navigationGroup = 'Certificados';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentCheck;
 

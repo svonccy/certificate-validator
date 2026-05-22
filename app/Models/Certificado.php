@@ -20,7 +20,7 @@ class Certificado extends Model
     use HasFactory, HasUlids, SoftDeletes;
 
     protected $fillable = [
-        'titular_id', // El enlace a la tabla titulares
+        'titular_id',
         'codigo_certificado',
         'estado',
         'fecha_emision',
