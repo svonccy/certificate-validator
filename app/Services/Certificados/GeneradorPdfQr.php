@@ -10,6 +10,7 @@ use App\Enums\PresetQr;
 use App\Models\Certificado;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
+use setasign\Fpdi\PdfParser\CrossReference\CrossReferenceException;
 use setasign\Fpdi\Tcpdf\Fpdi;
 
 final class GeneradorPdfQr
@@ -62,7 +63,12 @@ final class GeneradorPdfQr
         $pdf->SetAutoPageBreak(false);
         $pdf->SetKeywords('CNSM-TOKEN:'.$tokenBorrador);
 
-        $numeroPaginas = $pdf->setSourceFile($rutaOriginal);
+        try {
+            $numeroPaginas = $pdf->setSourceFile($rutaOriginal);
+        } catch (CrossReferenceException $exception) {
+            $this->repararPdfIncompatible($rutaOriginal);
+            $numeroPaginas = $pdf->setSourceFile($rutaOriginal);
+        }
         $datosQr = DatosQr::desdeRegistro($certificado, $this->obtenerDefaultsQr());
         $paginaObjetivo = $this->ajustarPagina($datosQr->pagina, $numeroPaginas);
 
@@ -185,5 +191,56 @@ final class GeneradorPdfQr
         }
 
         return $pagina;
+    }
+
+    private function repararPdfIncompatible(string $rutaPdf): void
+    {
+        $tempPath = tempnam(sys_get_temp_dir(), 'pdf_repair_').'.pdf';
+
+        if ($this->comandoExiste('qpdf')) {
+            $comando = sprintf('qpdf --disable-object-streams %s %s', escapeshellarg($rutaPdf), escapeshellarg($tempPath));
+            exec($comando, $output, $resultCode);
+
+            if ($resultCode === 0 && file_exists($tempPath) && filesize($tempPath) > 0) {
+                copy($tempPath, $rutaPdf);
+                @unlink($tempPath);
+
+                return;
+            }
+        }
+
+        if ($this->comandoExiste('gs')) {
+            $comando = sprintf(
+                'gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/prepress -dEmbedAllFonts=true -dSubsetFonts=false -dNOPAUSE -dQUIET -dBATCH -sOutputFile=%s %s',
+                escapeshellarg($tempPath),
+                escapeshellarg($rutaPdf)
+            );
+            exec($comando, $output, $resultCode);
+
+            if ($resultCode === 0 && file_exists($tempPath) && filesize($tempPath) > 0) {
+                copy($tempPath, $rutaPdf);
+                @unlink($tempPath);
+
+                return;
+            }
+        }
+
+        if (file_exists($tempPath)) {
+            @unlink($tempPath);
+        }
+
+        throw new RuntimeException(
+            'El PDF original utiliza una compresión no soportada por FPDI y no pudo ser reparado automáticamente.'
+        );
+    }
+
+    private function comandoExiste(string $comando): bool
+    {
+        $where = DIRECTORY_SEPARATOR === '\\' ? 'where' : 'which';
+        $output = [];
+        $res = 1;
+        exec("$where ".escapeshellcmd($comando), $output, $res);
+
+        return $res === 0;
     }
 }
