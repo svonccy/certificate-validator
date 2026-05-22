@@ -56,8 +56,7 @@ class TitularInfolist
                                                     ->label('Fecha de Emisión')
                                                     ->date('d/m/Y'),
                                             ])
-                                            ->columns(3)
-                                            ->emptyStateHeading('No hay certificados asociados a este titular.'),
+                                            ->columns(3),
                                     ]),
                             ])
                             ->columnSpan(2),
