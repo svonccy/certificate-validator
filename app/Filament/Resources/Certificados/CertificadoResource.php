@@ -23,7 +23,9 @@ use UnitEnum;
 
 class CertificadoResource extends Resource
 {
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 0;
+
+    protected static ?string $slug = 'documentos/certificados';
 
     protected static ?string $model = Certificado::class;
 
@@ -33,7 +35,7 @@ class CertificadoResource extends Resource
 
     protected static ?string $navigationLabel = 'Certificados';
 
-    protected static string | UnitEnum | null $navigationGroup = 'Documentos';
+    protected static string|UnitEnum|null $navigationGroup = 'Documentos';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 

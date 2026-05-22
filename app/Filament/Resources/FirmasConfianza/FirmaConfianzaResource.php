@@ -21,6 +21,8 @@ class FirmaConfianzaResource extends Resource
 {
     protected static ?int $navigationSort = 2;
 
+    protected static ?string $slug = 'documentos/firmas-confianza';
+
     protected static ?string $model = FirmaConfianza::class;
 
     protected static ?string $modelLabel = 'Firma autorizada';
@@ -29,7 +31,7 @@ class FirmaConfianzaResource extends Resource
 
     protected static ?string $navigationLabel = 'Firmas autorizadas';
 
-    protected static string | UnitEnum | null $navigationGroup = 'Documentos';
+    protected static string|UnitEnum|null $navigationGroup = 'Documentos';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentCheck;
 
