@@ -74,6 +74,10 @@ final class ValidadorFirmaPdf implements SignatureValidatorContract
      */
     private function obtenerTrustRoots(): array
     {
+        if (! config('certificados.verificar_cadena_confianza', true)) {
+            return [];
+        }
+
         $disco = Storage::disk((string) config('certificados.disk', self::DISCO_FALLBACK));
 
         return FirmaConfianza::query()

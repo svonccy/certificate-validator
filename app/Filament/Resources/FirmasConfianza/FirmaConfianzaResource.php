@@ -19,6 +19,11 @@ use UnitEnum;
 
 class FirmaConfianzaResource extends Resource
 {
+    public static function shouldRegisterNavigation(): bool
+    {
+        return (bool) config('certificados.verificar_cadena_confianza', true);
+    }
+
     protected static ?int $navigationSort = 2;
 
     protected static ?string $slug = 'documentos/firmas-confianza';
