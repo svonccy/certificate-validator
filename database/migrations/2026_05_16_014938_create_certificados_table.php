@@ -15,17 +15,17 @@ return new class extends Migration
             $table->string('codigo_certificado')->unique();
 
             $table->string('estado', 20)->default('PENDIENTE')->index();
-            $table->timestamp('fecha_emision')->nullable();
+            $table->timestamp('fecha_emision')->useCurrent();
 
             $table->string('ruta_pdf_original')->nullable();
             $table->string('ruta_pdf_borrador')->nullable();
+            $table->json('datos_qr')->nullable();
+            $table->unsignedSmallInteger('qr_pagina')->default(1);
 
             $table->string('token_borrador', 64)->nullable()->unique();
             $table->string('ruta_pdf_firmado')->nullable();
 
             $table->timestamps();
-
-            $table->softDeletes();
         });
     }
 

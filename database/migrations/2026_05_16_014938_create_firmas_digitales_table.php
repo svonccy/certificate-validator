@@ -23,7 +23,6 @@ return new class extends Migration
             $table->json('metadatos_completos')->nullable();
             $table->timestamp('fecha_validacion_local')->useCurrent();
 
-            $table->softDeletes();
             $table->timestamps();
         });
     }
