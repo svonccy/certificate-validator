@@ -15,7 +15,7 @@ class ListCertificados extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->label('Subir Certificado'),
+            CreateAction::make()->label('Nuevo Certificado'),
         ];
     }
 }

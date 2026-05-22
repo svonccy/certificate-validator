@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Certificados\Tables;
 
 use App\Enums\PresetQr;
+use App\Filament\Resources\Certificados\CertificadoResource;
 use App\Models\Certificado;
 use App\Services\Certificados\AdjuntarFirmadoService;
 use App\Services\Certificados\GeneradorPdfQr;
@@ -21,6 +22,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Enums\GridDirection;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Hugomyb\FilamentMediaAction\Actions\MediaAction;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -56,6 +58,12 @@ class CertificadosTable
             ])
             ->recordActions([
                 ActionGroup::make([
+                    MediaAction::make('previsualizar')
+                        ->label('Previsualizar PDF')
+                        ->icon('heroicon-o-eye')
+                        ->media(fn (Certificado $record) => asset('storage/'.($record->ruta_pdf_firmado ?? $record->ruta_pdf_borrador ?? $record->ruta_pdf_original)))
+                        ->visible(fn (Certificado $record): bool => (bool) ($record->ruta_pdf_original ?? $record->ruta_pdf_borrador ?? $record->ruta_pdf_firmado)),
+
                     Action::make('adjuntar_firmado')
                         ->label('Adjuntar PDF firmado')
                         ->icon('heroicon-o-arrow-up-tray')
@@ -239,6 +247,7 @@ class CertificadosTable
                     EditAction::make(),
                 ]),
             ])
+            ->recordUrl(fn (Certificado $record): string => CertificadoResource::getUrl('view', ['record' => $record]))
             ->groupedBulkActions([
                 DeleteBulkAction::make(),
             ]);
