@@ -9,13 +9,13 @@ use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 
-final class ValidadorFirmaPdf implements SignatureValidatorContract
+final class ValidadorFirmaPdf implements ValidadorFirmaContract
 {
     private const DISCO_FALLBACK = 'public';
 
     private const TIMEOUT = 60;
 
-    public function __construct(private readonly SignatureResultParser $parser) {}
+    public function __construct(private readonly ParserResultadoFirma $parser) {}
 
     /**
      * @return array<string, mixed>
@@ -28,7 +28,7 @@ final class ValidadorFirmaPdf implements SignatureValidatorContract
             throw new RuntimeException('No se encontro el PDF firmado en el almacenamiento.');
         }
 
-        $rutaScript = base_path('scripts/validar_firma.py');
+        $rutaScript = base_path('scripts/validar_firma/__main__.py');
 
         if (! is_file($rutaScript)) {
             throw new RuntimeException('No se encontro el script de validacion.');

@@ -14,7 +14,7 @@ use RuntimeException;
 
 final class AdjuntarFirmadoService
 {
-    public function __construct(private readonly SignatureValidatorContract $validador) {}
+    public function __construct(private readonly ValidadorFirmaContract $validador) {}
 
     public function ejecutar(Certificado $certificado, string $rutaPdfFirmado): AdjuntarFirmadoResultado
     {
@@ -43,8 +43,10 @@ final class AdjuntarFirmadoService
             throw new RuntimeException('Hash del PDF firmado no disponible');
         }
 
+        $debeVerificarCadena = (bool) config('certificados.verificar_cadena_confianza', true);
+
         $estado = match (true) {
-            $esValido && $cadenaConfiable => EstadoCertificado::Valido,
+            $esValido && (! $debeVerificarCadena || $cadenaConfiable) => EstadoCertificado::Valido,
             $esValido => EstadoCertificado::Pendiente,
             default => EstadoCertificado::Rechazado,
         };
@@ -88,12 +90,16 @@ final class AdjuntarFirmadoService
             );
         }
 
+        $debeVerificarCadena = (bool) config('certificados.verificar_cadena_confianza', true);
+
         return match ($estado) {
             EstadoCertificado::Valido => new AdjuntarFirmadoResultado(
                 $estado,
                 $borradorCoincide,
                 'Firma valida',
-                'El PDF firmado fue validado y la cadena es confiable.',
+                $debeVerificarCadena
+                    ? 'El PDF firmado fue validado y la cadena es confiable.'
+                    : 'El PDF firmado fue validado con éxito.',
                 'success',
             ),
             EstadoCertificado::Pendiente => new AdjuntarFirmadoResultado(

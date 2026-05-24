@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\FirmaConfianza;
-use App\Services\Certificados\SignatureResultParser;
+use App\Services\Certificados\ParserResultadoFirma;
 use App\Services\Certificados\ValidadorFirmaPdf;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
@@ -22,7 +22,7 @@ it('retorna trust roots vacio si verificar_cadena_confianza es false', function 
         'activo' => true,
     ]);
 
-    $parser = new SignatureResultParser;
+    $parser = new ParserResultadoFirma;
     $validador = new ValidadorFirmaPdf($parser);
 
     $reflector = new ReflectionClass(ValidadorFirmaPdf::class);
@@ -47,7 +47,7 @@ it('retorna trust roots si verificar_cadena_confianza es true y existen archivos
         'activo' => true,
     ]);
 
-    $parser = new SignatureResultParser;
+    $parser = new ParserResultadoFirma;
     $validador = new ValidadorFirmaPdf($parser);
 
     $reflector = new ReflectionClass(ValidadorFirmaPdf::class);

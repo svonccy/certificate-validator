@@ -6,7 +6,7 @@ namespace App\Services\Certificados;
 
 use RuntimeException;
 
-final class SignatureResultParser
+final class ParserResultadoFirma
 {
     /**
      * @return array<string, mixed>
