@@ -11,7 +11,6 @@ use App\Models\Certificado;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use setasign\Fpdi\PdfParser\CrossReference\CrossReferenceException;
-use setasign\Fpdi\Tcpdf\Fpdi;
 
 final class GeneradorPdfQr
 {
@@ -23,21 +22,11 @@ final class GeneradorPdfQr
 
     private const TEXTO_ALTO_TOTAL = self::TEXTO_LINEA_ALTO * self::TEXTO_LINEAS;
 
-    public function __construct(private readonly CalculadorPosicionQr $calculadorPosicion) {}
-
-    /**
-     * @return array{width: float, height: float, orientation: string}
-     */
-    private function obtenerTamanoPlantilla(Fpdi $pdf, int|string $paginaId): array
-    {
-        $tamano = $pdf->getTemplateSize($paginaId);
-
-        return [
-            'width' => (float) $tamano['width'],
-            'height' => (float) $tamano['height'],
-            'orientation' => (string) $tamano['orientation'],
-        ];
-    }
+    public function __construct(
+        private readonly CalculadorPosicionQr $calculadorPosicion,
+        private readonly EditorPdfContract $pdfEditor,
+        private readonly NormalizadorPdfContract $pdfNormalizer
+    ) {}
 
     public function generarBorrador(Certificado $certificado, string $tokenBorrador): string
     {
@@ -56,28 +45,20 @@ final class GeneradorPdfQr
 
         $rutaOriginal = $disco->path($rutaPdfOriginal);
 
-        $pdf = new Fpdi;
-        $pdf->setPrintHeader(false);
-        $pdf->setPrintFooter(false);
-        $pdf->SetMargins(0, 0, 0, true);
-        $pdf->SetAutoPageBreak(false);
-        $pdf->SetKeywords('CNSM-TOKEN:'.$tokenBorrador);
+        $this->pdfEditor->establecerKeywords('CNSM-TOKEN:'.$tokenBorrador);
 
         try {
-            $numeroPaginas = $pdf->setSourceFile($rutaOriginal);
+            $numeroPaginas = $this->pdfEditor->cargarOrigen($rutaOriginal);
         } catch (CrossReferenceException $exception) {
-            $this->repararPdfIncompatible($rutaOriginal);
-            $numeroPaginas = $pdf->setSourceFile($rutaOriginal);
+            $this->pdfNormalizer->normalizar($rutaOriginal);
+            $numeroPaginas = $this->pdfEditor->cargarOrigen($rutaOriginal);
         }
+
         $datosQr = DatosQr::desdeRegistro($certificado, $this->obtenerDefaultsQr());
         $paginaObjetivo = $this->ajustarPagina($datosQr->pagina, $numeroPaginas);
 
         for ($pagina = 1; $pagina <= $numeroPaginas; $pagina++) {
-            $paginaId = $pdf->importPage($pagina);
-            $tamano = $this->obtenerTamanoPlantilla($pdf, $paginaId);
-
-            $pdf->AddPage($tamano['orientation'], [$tamano['width'], $tamano['height']]);
-            $pdf->useTemplate($paginaId);
+            $tamano = $this->pdfEditor->clonarPagina($pagina);
 
             if ($pagina === $paginaObjetivo) {
                 $posicion = $this->calculadorPosicion->calcular(
@@ -86,7 +67,7 @@ final class GeneradorPdfQr
                     self::TEXTO_GAP,
                     self::TEXTO_ALTO_TOTAL,
                 );
-                $this->dibujarQr($pdf, $certificado, $posicion);
+                $this->dibujarQr($certificado, $posicion);
             }
         }
 
@@ -95,18 +76,17 @@ final class GeneradorPdfQr
         $rutaBorrador = $directorioBorradores.'/'.$certificado->id.'.pdf';
         $rutaSalida = $disco->path($rutaBorrador);
 
-        $pdf->Output($rutaSalida, 'F');
+        $this->pdfEditor->guardarEn($rutaSalida);
 
         return $rutaBorrador;
     }
 
-    private function dibujarQr(Fpdi $pdf, Certificado $certificado, PosicionQr $posicion): void
+    private function dibujarQr(Certificado $certificado, PosicionQr $posicion): void
     {
         $url = route('certificados.verificar', $certificado);
 
-        $this->imprimirCodigoQr($pdf, $url, $posicion->xQr, $posicion->yQr, $posicion->lado);
+        $this->pdfEditor->dibujarQr($url, $posicion->xQr, $posicion->yQr, $posicion->lado);
         $this->imprimirTextosAdicionales(
-            $pdf,
             $certificado,
             $posicion->xQr,
             $posicion->yQr,
@@ -116,20 +96,7 @@ final class GeneradorPdfQr
         );
     }
 
-    private function imprimirCodigoQr(Fpdi $pdf, string $url, float $x, float $y, float $lado): void
-    {
-        $estiloQr = [
-            'border' => 0,
-            'padding' => 5,
-            'fgcolor' => [0, 0, 0],
-            'bgcolor' => [255, 255, 255],
-        ];
-
-        $pdf->write2DBarcode($url, 'QRCODE,H', $x, $y, $lado, $lado, $estiloQr, 'N');
-    }
-
     private function imprimirTextosAdicionales(
-        Fpdi $pdf,
         Certificado $certificado,
         float $xQr,
         float $yQr,
@@ -137,8 +104,6 @@ final class GeneradorPdfQr
         float $anchoBloque,
         bool $textoArriba,
     ): void {
-        $pdf->SetTextColor(0);
-
         // Calcular la posición Y inicial para los textos según la fila.
         $yTexto = $textoArriba
             ? $yQr - self::TEXTO_GAP - self::TEXTO_ALTO_TOTAL
@@ -147,16 +112,13 @@ final class GeneradorPdfQr
         // Calcular retroceso en X para centrar el bloque de texto sobre el QR
         $xTexto = $xQr - (($anchoBloque - $lado) / 2);
 
-        $pdf->SetFont('helvetica', '', 7);
-        $pdf->SetXY($xTexto, $yTexto);
-        $pdf->Cell($anchoBloque, self::TEXTO_LINEA_ALTO, 'Emitido el: '.$certificado->fecha_emision_formateada, 0, 1, 'C');
-
-        // $pdf->SetXY($xTexto, $yTexto + self::TEXTO_LINEA_ALTO);
-        // $pdf->Cell($anchoBloque, self::TEXTO_LINEA_ALTO, 'Código de verificación:', 0, 1, 'C');
-
-        // $pdf->SetFont('helvetica', 'B', 7);
-        // $pdf->SetXY($xTexto, $yTexto + (self::TEXTO_LINEA_ALTO * 2));
-        // $pdf->Cell($anchoBloque, self::TEXTO_LINEA_ALTO, $certificado->codigo_certificado, 0, 1, 'C');
+        $this->pdfEditor->escribirTextoCentrado(
+            'Emitido el: '.$certificado->fecha_emision_formateada,
+            $xTexto,
+            $yTexto,
+            $anchoBloque,
+            self::TEXTO_LINEA_ALTO
+        );
     }
 
     /**
@@ -191,56 +153,5 @@ final class GeneradorPdfQr
         }
 
         return $pagina;
-    }
-
-    private function repararPdfIncompatible(string $rutaPdf): void
-    {
-        $tempPath = tempnam(sys_get_temp_dir(), 'pdf_repair_').'.pdf';
-
-        if ($this->comandoExiste('qpdf')) {
-            $comando = sprintf('qpdf --disable-object-streams %s %s', escapeshellarg($rutaPdf), escapeshellarg($tempPath));
-            exec($comando, $output, $resultCode);
-
-            if ($resultCode === 0 && file_exists($tempPath) && filesize($tempPath) > 0) {
-                copy($tempPath, $rutaPdf);
-                @unlink($tempPath);
-
-                return;
-            }
-        }
-
-        if ($this->comandoExiste('gs')) {
-            $comando = sprintf(
-                'gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/prepress -dEmbedAllFonts=true -dSubsetFonts=false -dNOPAUSE -dQUIET -dBATCH -sOutputFile=%s %s',
-                escapeshellarg($tempPath),
-                escapeshellarg($rutaPdf)
-            );
-            exec($comando, $output, $resultCode);
-
-            if ($resultCode === 0 && file_exists($tempPath) && filesize($tempPath) > 0) {
-                copy($tempPath, $rutaPdf);
-                @unlink($tempPath);
-
-                return;
-            }
-        }
-
-        if (file_exists($tempPath)) {
-            @unlink($tempPath);
-        }
-
-        throw new RuntimeException(
-            'El PDF original utiliza una compresión no soportada por FPDI y no pudo ser reparado automáticamente.'
-        );
-    }
-
-    private function comandoExiste(string $comando): bool
-    {
-        $where = DIRECTORY_SEPARATOR === '\\' ? 'where' : 'which';
-        $output = [];
-        $res = 1;
-        exec("$where ".escapeshellcmd($comando), $output, $res);
-
-        return $res === 0;
     }
 }

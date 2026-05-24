@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Services\Certificados\GeneradorPdfQr;
+use App\Services\Certificados\NormalizadorPdfContract;
 use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
@@ -84,7 +84,7 @@ test('it allows uploads that do not contain the draft token', function (): void 
 });
 
 test('repararPdfIncompatible runs on existing template', function (): void {
-    $generador = app(GeneradorPdfQr::class);
+    $normalizer = app(NormalizadorPdfContract::class);
 
     $files = glob(storage_path('app/public/certificados/plantillas/*.pdf'));
     if ($files === [] || $files === false) {
@@ -96,11 +96,7 @@ test('repararPdfIncompatible runs on existing template', function (): void {
     $tempCopy = tempnam(sys_get_temp_dir(), 'test_pdf_').'.pdf';
     copy($file, $tempCopy);
 
-    $reflection = new ReflectionClass(GeneradorPdfQr::class);
-    $method = $reflection->getMethod('repararPdfIncompatible');
-    $method->setAccessible(true);
-
-    $method->invoke($generador, $tempCopy);
+    $normalizer->normalizar($tempCopy);
 
     expect(file_exists($tempCopy))->toBeTrue();
     expect(filesize($tempCopy))->toBeGreaterThan(0);
