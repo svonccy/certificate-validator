@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\CertificadoBorradorController;
+use App\Http\Controllers\DescargarCertificadoController;
 use App\Http\Controllers\VerificacionCertificadoController;
 use Illuminate\Support\Facades\Route;
 
@@ -11,5 +11,5 @@ Route::get('/', function () {
 Route::get('/verificar/{certificado}', VerificacionCertificadoController::class)
     ->name('certificados.verificar');
 
-Route::get('/certificados/{certificado}/borrador', CertificadoBorradorController::class)
-    ->name('certificados.descargar-borrador');
+Route::get('/certificados/{certificado}/descargar', DescargarCertificadoController::class)
+    ->name('certificados.descargar');

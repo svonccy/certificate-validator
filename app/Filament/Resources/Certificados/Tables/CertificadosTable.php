@@ -4,25 +4,25 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Certificados\Tables;
 
+use App\Enums\EstadoCertificado;
 use App\Enums\PresetQr;
 use App\Filament\Resources\Certificados\CertificadoResource;
 use App\Models\Certificado;
-use App\Services\Certificados\AdjuntarFirmadoService;
 use App\Services\Certificados\GeneradorPdfQr;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\FileUpload;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\ToggleButtons;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Enums\GridDirection;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Hugomyb\FilamentMediaAction\Actions\MediaAction;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -63,66 +63,15 @@ class CertificadosTable
             ])
             ->recordActions([
                 ActionGroup::make([
-                    MediaAction::make('previsualizar')
-                        ->label('Previsualizar PDF')
-                        ->icon('heroicon-o-eye')
-                        ->media(fn (Certificado $record) => asset('storage/'.($record->ruta_pdf_firmado ?? $record->ruta_pdf_borrador ?? $record->ruta_pdf_original)))
-                        ->visible(fn (Certificado $record): bool => (bool) ($record->ruta_pdf_original ?? $record->ruta_pdf_borrador ?? $record->ruta_pdf_firmado)),
-
-                    Action::make('adjuntar_firmado')
-                        ->label('Adjuntar PDF firmado')
-                        ->icon('heroicon-o-arrow-up-tray')
-                        ->form([
-                            FileUpload::make('pdf_firmado')
-                                ->label('PDF firmado')
-                                ->acceptedFileTypes(['application/pdf'])
-                                ->maxSize(10240)
-                                ->disk(config('certificados.disk', 'public'))
-                                ->directory(config('certificados.firmados_dir', 'certificados/firmados'))
-                                ->required()
-                                ->preventFilePathTampering(),
-                        ])
-                        ->action(function (array $data, Certificado $record, AdjuntarFirmadoService $adjuntarFirmado): void {
-                            $rutaPdfFirmado = $data['pdf_firmado'] ?? null;
-
-                            if (! is_string($rutaPdfFirmado) || $rutaPdfFirmado === '') {
-                                Notification::make()
-                                    ->title('No se recibio el PDF firmado')
-                                    ->danger()
-                                    ->send();
-
-                                return;
-                            }
-
-                            try {
-                                $resultadoAdjunto = $adjuntarFirmado->ejecutar($record, $rutaPdfFirmado);
-                            } catch (\RuntimeException $exception) {
-                                Notification::make()
-                                    ->title('No se pudo validar la firma')
-                                    ->body($exception->getMessage())
-                                    ->danger()
-                                    ->send();
-
-                                return;
-                            }
-
-                            Notification::make()
-                                ->title($resultadoAdjunto->titulo)
-                                ->body($resultadoAdjunto->mensaje)
-                                ->color($resultadoAdjunto->color)
-                                ->send();
-                        })
-                        ->visible(fn (Certificado $record): bool => (bool) $record->getAttribute('ruta_pdf_original')),
-
                     Action::make('generar_qr')
                         ->label('Generar QR')
                         ->icon('heroicon-o-qr-code')
                         ->modalHeading('Configurar QR')
                         ->modalSubmitActionLabel('Generar borrador')
-                        ->form([
-                            ToggleButtons::make('qr_preset_grid')
+                        ->schema([
+                            Radio::make('qr_preset_grid')
                                 ->label('Posición del QR')
-                                ->options(PresetQr::opcionesCuadricula())
+                                ->options(array_map(fn () => '', PresetQr::opcionesCuadricula()))
                                 ->columns(5)
                                 ->gridDirection(GridDirection::Row)
                                 ->required(fn (Get $get): bool => ! (bool) $get('qr_manual'))
@@ -241,15 +190,22 @@ class CertificadosTable
                         })
                         ->visible(fn (Certificado $record): bool => (bool) $record->getAttribute('ruta_pdf_original')),
 
-                    Action::make('descargar_borrador')
-                        ->label('Descargar borrador')
+                    Action::make('descargar')
+                        ->label(fn (Certificado $record): string => $record->estado === EstadoCertificado::Valido ? 'Descargar Firmado' : 'Descargar Borrador')
                         ->icon('heroicon-o-arrow-down-tray')
-                        ->url(fn (Certificado $record): string => route('certificados.descargar-borrador', $record))
+                        ->url(fn (Certificado $record): string => route('certificados.descargar', $record))
                         ->openUrlInNewTab()
-                        ->visible(fn (Certificado $record): bool => (bool) $record->getAttribute('ruta_pdf_borrador'))
-                        ->disabled(fn (Certificado $record): bool => ! Storage::disk((string) config('certificados.disk', 'public'))->exists((string) $record->getAttribute('ruta_pdf_borrador'))),
+                        ->visible(fn (Certificado $record): bool => $record->estado === EstadoCertificado::Valido ? (bool) $record->ruta_pdf_firmado : (bool) $record->ruta_pdf_borrador)
+                        ->disabled(fn (Certificado $record): bool => ! Storage::disk((string) config('certificados.disk', 'public'))->exists((string) ($record->estado === EstadoCertificado::Valido ? $record->ruta_pdf_firmado : $record->ruta_pdf_borrador))),
 
-                    EditAction::make(),
+                    ViewAction::make()
+                        ->color('gray'),
+
+                    EditAction::make()
+                        ->color('info'),
+
+                    DeleteAction::make()
+                        ->color('danger'),
                 ]),
             ])
             ->recordUrl(fn (Certificado $record): string => CertificadoResource::getUrl('view', ['record' => $record]))

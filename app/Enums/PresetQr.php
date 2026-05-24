@@ -64,21 +64,21 @@ enum PresetQr: string
     public static function opcionesCuadricula(): array
     {
         return [
-            self::Superior1->value => 'S1',
-            self::Superior2->value => 'S2',
-            self::Superior3->value => 'S3',
-            self::Superior4->value => 'S4',
-            self::Superior5->value => 'S5',
-            self::Medio1->value => 'M1',
-            self::Medio2->value => 'M2',
-            self::Medio3->value => 'M3',
-            self::Medio4->value => 'M4',
-            self::Medio5->value => 'M5',
-            self::Inferior1->value => 'I1',
-            self::Inferior2->value => 'I2',
-            self::Inferior3->value => 'I3',
-            self::Inferior4->value => 'I4',
-            self::Inferior5->value => 'I5',
+            self::Superior1->value => 'Posición 1,1',
+            self::Superior2->value => 'Posición 1,2',
+            self::Superior3->value => 'Posición 1,3',
+            self::Superior4->value => 'Posición 1,4',
+            self::Superior5->value => 'Posición 1,5',
+            self::Medio1->value => 'Posición 2,1',
+            self::Medio2->value => 'Posición 2,2',
+            self::Medio3->value => 'Posición 2,3',
+            self::Medio4->value => 'Posición 2,4',
+            self::Medio5->value => 'Posición 2,5',
+            self::Inferior1->value => 'Posición 3,1',
+            self::Inferior2->value => 'Posición 3,2',
+            self::Inferior3->value => 'Posición 3,3',
+            self::Inferior4->value => 'Posición 3,4',
+            self::Inferior5->value => 'Posición 3,5',
         ];
     }
 

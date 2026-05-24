@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 class FirmaDigital extends Model
 {
@@ -26,5 +27,26 @@ class FirmaDigital extends Model
     public function certificado(): BelongsTo
     {
         return $this->belongsTo(Certificado::class);
+    }
+
+    public function getFechaFirmaAttribute($value): ?Carbon
+    {
+        if (! $value) {
+            return null;
+        }
+
+        $original = $this->metadatos_completos['firma']['fecha_firma'] ?? null;
+        if (is_string($original) && $original !== '') {
+            return Carbon::parse($original)->setTimezone((string) config('app.timezone'));
+        }
+
+        return Carbon::parse($value)->setTimezone((string) config('app.timezone'));
+    }
+
+    public function setFechaFirmaAttribute($value): void
+    {
+        $this->attributes['fecha_firma'] = $value
+            ? Carbon::parse($value)->setTimezone((string) config('app.timezone'))->format('Y-m-d H:i:s')
+            : null;
     }
 }

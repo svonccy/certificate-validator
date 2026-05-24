@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Certificados\Pages;
 
+use App\Enums\EstadoCertificado;
 use App\Enums\PresetQr;
 use App\Filament\Resources\Certificados\CertificadoResource;
 use App\Services\Certificados\AdjuntarFirmadoService;
@@ -11,9 +12,9 @@ use App\Services\Certificados\GeneradorPdfQr;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\ToggleButtons;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Components\Utilities\Get;
@@ -89,10 +90,10 @@ class ViewCertificado extends ViewRecord
                 ->icon('heroicon-o-qr-code')
                 ->modalHeading('Configurar QR')
                 ->modalSubmitActionLabel('Generar borrador')
-                ->form([
-                    ToggleButtons::make('qr_preset_grid')
+                ->schema([
+                    Radio::make('qr_preset_grid')
                         ->label('Posición del QR')
-                        ->options(PresetQr::opcionesCuadricula())
+                        ->options(array_map(fn () => '', PresetQr::opcionesCuadricula()))
                         ->columns(5)
                         ->gridDirection(GridDirection::Row)
                         ->required(fn (Get $get): bool => ! (bool) $get('qr_manual'))
@@ -215,13 +216,13 @@ class ViewCertificado extends ViewRecord
                 })
                 ->visible(fn (): bool => (bool) $this->getRecord()->getAttribute('ruta_pdf_original')),
 
-            Action::make('descargar_borrador')
-                ->label('Descargar borrador')
+            Action::make('descargar')
+                ->label(fn (): string => $this->getRecord()->estado === EstadoCertificado::Valido ? 'Descargar Firmado' : 'Descargar Borrador')
                 ->icon('heroicon-o-arrow-down-tray')
-                ->url(fn (): string => route('certificados.descargar-borrador', $this->getRecord()))
+                ->url(fn (): string => route('certificados.descargar', $this->getRecord()))
                 ->openUrlInNewTab()
-                ->visible(fn (): bool => (bool) $this->getRecord()->getAttribute('ruta_pdf_borrador'))
-                ->disabled(fn (): bool => ! Storage::disk((string) config('certificados.disk', 'public'))->exists((string) $this->getRecord()->getAttribute('ruta_pdf_borrador'))),
+                ->visible(fn (): bool => $this->getRecord()->estado === EstadoCertificado::Valido ? (bool) $this->getRecord()->ruta_pdf_firmado : (bool) $this->getRecord()->ruta_pdf_borrador)
+                ->disabled(fn (): bool => ! Storage::disk((string) config('certificados.disk', 'public'))->exists((string) ($this->getRecord()->estado === EstadoCertificado::Valido ? $this->getRecord()->ruta_pdf_firmado : $this->getRecord()->ruta_pdf_borrador))),
 
             EditAction::make(),
         ];
