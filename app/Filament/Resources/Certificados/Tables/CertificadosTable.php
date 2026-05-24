@@ -5,26 +5,20 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Certificados\Tables;
 
 use App\Enums\EstadoCertificado;
-use App\Enums\PresetQr;
 use App\Filament\Resources\Certificados\CertificadoResource;
+use App\Filament\Resources\Certificados\Schemas\CertificadoForm;
 use App\Models\Certificado;
-use App\Services\Certificados\GeneradorPdfQr;
+use App\Services\Certificados\ConfigurarQrBorradorService;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
-use Filament\Forms\Components\Radio;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
-use Filament\Schemas\Components\Utilities\Get;
-use Filament\Support\Enums\GridDirection;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class CertificadosTable
 {
@@ -68,60 +62,9 @@ class CertificadosTable
                         ->icon('heroicon-o-qr-code')
                         ->modalHeading('Configurar QR')
                         ->modalSubmitActionLabel('Generar borrador')
-                        ->schema([
-                            Radio::make('qr_preset_grid')
-                                ->label('Posición del QR')
-                                ->options(array_map(fn () => '', PresetQr::opcionesCuadricula()))
-                                ->columns(5)
-                                ->gridDirection(GridDirection::Row)
-                                ->required(fn (Get $get): bool => ! (bool) $get('qr_manual'))
-                                ->hidden(fn (Get $get): bool => (bool) $get('qr_manual'))
-                                ->live()
-                                ->columnSpanFull(),
-                            Toggle::make('qr_manual')
-                                ->label('Manual')
-                                ->live(),
-                            TextInput::make('qr_lado')
-                                ->label('Lado del QR (mm)')
-                                ->numeric()
-                                ->minValue(10)
-                                ->required(),
-                            TextInput::make('qr_pagina')
-                                ->label('Página')
-                                ->numeric()
-                                ->minValue(1)
-                                ->required(),
-                            TextInput::make('qr_x')
-                                ->label('Coordenada X (mm)')
-                                ->numeric()
-                                ->required(fn (Get $get): bool => (bool) $get('qr_manual'))
-                                ->hidden(fn (Get $get): bool => ! (bool) $get('qr_manual')),
-                            TextInput::make('qr_y')
-                                ->label('Coordenada Y (mm)')
-                                ->numeric()
-                                ->required(fn (Get $get): bool => (bool) $get('qr_manual'))
-                                ->hidden(fn (Get $get): bool => ! (bool) $get('qr_manual')),
-                        ])
-                        ->fillForm(function (Certificado $record): array {
-                            $defaults = config('certificados.defaults', []);
-                            $defaults = is_array($defaults) ? $defaults : [];
-                            $datosQr = $record->getAttribute('datos_qr');
-                            $datosQr = is_array($datosQr) ? $datosQr : [];
-
-                            $presetValor = (string) ($datosQr['preset'] ?? $defaults['preset'] ?? PresetQr::Superior1->value);
-                            $preset = PresetQr::desdeValor($presetValor);
-                            $esManual = $preset === PresetQr::Manual;
-
-                            return [
-                                'qr_preset_grid' => $esManual ? PresetQr::Superior1->value : $preset->value,
-                                'qr_manual' => $esManual,
-                                'qr_lado' => $datosQr['lado'] ?? $defaults['lado'] ?? 30,
-                                'qr_x' => $datosQr['x'] ?? $defaults['x'] ?? null,
-                                'qr_y' => $datosQr['y'] ?? $defaults['y'] ?? null,
-                                'qr_pagina' => $record->getAttribute('qr_pagina') ?? ($defaults['pagina'] ?? 1),
-                            ];
-                        })
-                        ->action(function (array $data, Certificado $record, GeneradorPdfQr $generador): void {
+                        ->schema(CertificadoForm::esquemaQr())
+                        ->fillForm(fn (Certificado $record): array => CertificadoForm::valoresPorDefectoQr($record))
+                        ->action(function (array $data, Certificado $record, ConfigurarQrBorradorService $service): void {
                             if (! $record->getAttribute('ruta_pdf_original')) {
                                 Notification::make()
                                     ->title('No hay PDF original')
@@ -132,42 +75,8 @@ class CertificadosTable
                                 return;
                             }
 
-                            $defaults = config('certificados.defaults', []);
-                            $defaults = is_array($defaults) ? $defaults : [];
-
-                            $tokenBorrador = $record->getAttribute('token_borrador') ?: (string) Str::uuid();
-                            $usarManual = (bool) ($data['qr_manual'] ?? false);
-                            $presetValor = $usarManual
-                                ? PresetQr::Manual->value
-                                : (string) ($data['qr_preset_grid'] ?? $defaults['preset'] ?? PresetQr::Superior1->value);
-                            $preset = PresetQr::desdeValor($presetValor);
-                            $lado = is_numeric($data['qr_lado'] ?? null) ? (float) $data['qr_lado'] : null;
-                            $x = is_numeric($data['qr_x'] ?? null) ? (float) $data['qr_x'] : null;
-                            $y = is_numeric($data['qr_y'] ?? null) ? (float) $data['qr_y'] : null;
-                            $pagina = is_numeric($data['qr_pagina'] ?? null)
-                                ? max((int) $data['qr_pagina'], 1)
-                                : (int) ($defaults['pagina'] ?? 1);
-
-                            if ($preset !== PresetQr::Manual) {
-                                $x = null;
-                                $y = null;
-                            }
-
-                            $datosQr = array_filter([
-                                'preset' => $preset->value,
-                                'lado' => $lado,
-                                'x' => $x,
-                                'y' => $y,
-                            ], static fn ($valor): bool => $valor !== null);
-
-                            $record->forceFill([
-                                'datos_qr' => $datosQr,
-                                'qr_pagina' => $pagina,
-                                'token_borrador' => $tokenBorrador,
-                            ]);
-
                             try {
-                                $rutaBorrador = $generador->generarBorrador($record, $tokenBorrador);
+                                $service->ejecutar($record, $data);
                             } catch (\RuntimeException $exception) {
                                 Notification::make()
                                     ->title('No se pudo generar el QR')
@@ -177,10 +86,6 @@ class CertificadosTable
 
                                 return;
                             }
-
-                            $record->forceFill([
-                                'ruta_pdf_borrador' => $rutaBorrador,
-                            ])->save();
 
                             Notification::make()
                                 ->title('QR generado')
