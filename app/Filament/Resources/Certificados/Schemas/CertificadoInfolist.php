@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Certificados\Schemas;
 
+use App\Models\Certificado;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
-use Hugomyb\FilamentMediaAction\Actions\MediaAction;
 
 class CertificadoInfolist
 {
@@ -49,32 +49,37 @@ class CertificadoInfolist
                         // Right Column (Main content) - Column Span 2
                         Group::make()
                             ->schema([
-                                Section::make('Documentos Disponibles')
-                                    ->description('Previsualiza o descarga las diferentes versiones del PDF del certificado.')
+                                Section::make(fn (Certificado $record): string => match (true) {
+                                    (bool) $record->ruta_pdf_firmado => 'Previsualización: Documento Firmado',
+                                    (bool) $record->ruta_pdf_borrador => 'Previsualización: Borrador (con QR)',
+                                    (bool) $record->ruta_pdf_original => 'Previsualización: Plantilla Original',
+                                    default => 'Previsualización no disponible',
+                                })
+                                    ->description(fn (Certificado $record): string => match (true) {
+                                        (bool) $record->ruta_pdf_firmado => 'Mostrando el documento final firmado digitalmente.',
+                                        (bool) $record->ruta_pdf_borrador => 'Mostrando el borrador generado con el código QR incrustado.',
+                                        (bool) $record->ruta_pdf_original => 'Mostrando el archivo PDF de plantilla original sin QR ni firmas.',
+                                        default => 'Suba la plantilla original del certificado para activar la previsualización.',
+                                    })
+                                    ->icon(fn (Certificado $record): string => match (true) {
+                                        (bool) $record->ruta_pdf_firmado => 'heroicon-o-check-badge',
+                                        (bool) $record->ruta_pdf_borrador => 'heroicon-o-qr-code',
+                                        (bool) $record->ruta_pdf_original => 'heroicon-o-document',
+                                        default => 'heroicon-o-document-minus',
+                                    })
                                     ->schema([
-                                        Actions::make([
-                                            MediaAction::make('previsualizar_original')
-                                                ->label('Previsualizar Plantilla')
-                                                ->icon('heroicon-o-document')
-                                                ->color('gray')
-                                                ->media(fn ($record) => $record->ruta_pdf_original ? asset('storage/'.$record->ruta_pdf_original) : null)
-                                                ->visible(fn ($record) => (bool) $record->ruta_pdf_original),
-
-                                            MediaAction::make('previsualizar_borrador')
-                                                ->label('Previsualizar Borrador')
-                                                ->icon('heroicon-o-qr-code')
-                                                ->color('warning')
-                                                ->media(fn ($record) => $record->ruta_pdf_borrador ? asset('storage/'.$record->ruta_pdf_borrador) : null)
-                                                ->visible(fn ($record) => (bool) $record->ruta_pdf_borrador),
-
-                                            MediaAction::make('previsualizar_firmado')
-                                                ->label('Previsualizar PDF Firmado')
-                                                ->icon('heroicon-o-check-badge')
-                                                ->color('success')
-                                                ->media(fn ($record) => $record->ruta_pdf_firmado ? asset('storage/'.$record->ruta_pdf_firmado) : null)
-                                                ->visible(fn ($record) => (bool) $record->ruta_pdf_firmado),
-                                        ]),
-                                    ]),
+                                        View::make('pdf_viewer')
+                                            ->view('filament.infolists.components.pdf-viewer')
+                                            ->viewData(fn (Certificado $record): array => [
+                                                'path' => match (true) {
+                                                    (bool) $record->ruta_pdf_firmado => $record->ruta_pdf_firmado,
+                                                    (bool) $record->ruta_pdf_borrador => $record->ruta_pdf_borrador,
+                                                    (bool) $record->ruta_pdf_original => $record->ruta_pdf_original,
+                                                    default => null,
+                                                },
+                                            ]),
+                                    ])
+                                    ->columnSpanFull(),
                             ])
                             ->columnSpan(2),
                     ])
