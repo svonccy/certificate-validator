@@ -18,6 +18,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\GridDirection;
+use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Model;
 
 class CertificadoForm
@@ -43,7 +44,7 @@ class CertificadoForm
                                             ->searchable()
                                             ->preload()
                                             ->required()
-                                            ->getOptionLabelFromRecordUsing(fn (Model $record) => "{$record->dni} - {$record->nombre_completo}")
+                                            ->getOptionLabelFromRecordUsing(fn(Model $record) => "{$record->dni} - {$record->nombre_completo}")
                                             ->createOptionForm([
                                                 TextInput::make('dni')
                                                     ->label('DNI')
@@ -54,7 +55,8 @@ class CertificadoForm
                                                     ->label('Nombre Completo')
                                                     ->required()
                                                     ->maxLength(255),
-                                            ]),
+                                            ])
+                                            ->createOptionAction(fn($action) => $action->modalHeading('Nuevo Titular')->modalWidth(Width::Medium)),
                                     ]),
                             ])
                             ->columnSpan(1),
@@ -89,11 +91,11 @@ class CertificadoForm
         return [
             Radio::make('qr_preset_grid')
                 ->label('Posición del QR')
-                ->options(array_map(fn () => '', PresetQr::opcionesCuadricula()))
+                ->options(array_map(fn() => '', PresetQr::opcionesCuadricula()))
                 ->columns(5)
                 ->gridDirection(GridDirection::Row)
-                ->required(fn (Get $get): bool => ! (bool) $get('qr_manual'))
-                ->hidden(fn (Get $get): bool => (bool) $get('qr_manual'))
+                ->required(fn(Get $get): bool => !(bool)$get('qr_manual'))
+                ->hidden(fn(Get $get): bool => (bool)$get('qr_manual'))
                 ->live()
                 ->columnSpanFull(),
             Toggle::make('qr_manual')
@@ -112,13 +114,13 @@ class CertificadoForm
             TextInput::make('qr_x')
                 ->label('Coordenada X (mm)')
                 ->numeric()
-                ->required(fn (Get $get): bool => (bool) $get('qr_manual'))
-                ->hidden(fn (Get $get): bool => ! (bool) $get('qr_manual')),
+                ->required(fn(Get $get): bool => (bool)$get('qr_manual'))
+                ->hidden(fn(Get $get): bool => !(bool)$get('qr_manual')),
             TextInput::make('qr_y')
                 ->label('Coordenada Y (mm)')
                 ->numeric()
-                ->required(fn (Get $get): bool => (bool) $get('qr_manual'))
-                ->hidden(fn (Get $get): bool => ! (bool) $get('qr_manual')),
+                ->required(fn(Get $get): bool => (bool)$get('qr_manual'))
+                ->hidden(fn(Get $get): bool => !(bool)$get('qr_manual')),
         ];
     }
 
@@ -132,7 +134,7 @@ class CertificadoForm
         $datosQr = $record->getAttribute('datos_qr');
         $datosQr = is_array($datosQr) ? $datosQr : [];
 
-        $presetValor = (string) ($datosQr['preset'] ?? $defaults['preset'] ?? PresetQr::Superior1->value);
+        $presetValor = (string)($datosQr['preset'] ?? $defaults['preset'] ?? PresetQr::Superior1->value);
         $preset = PresetQr::desdeValor($presetValor);
         $esManual = $preset === PresetQr::Manual;
 
