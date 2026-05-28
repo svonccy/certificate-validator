@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Certificados;
 
+use App\Enums\EstadoCertificado;
 use App\Enums\PresetQr;
 use App\Models\Certificado;
 use Illuminate\Support\Str;
@@ -53,6 +54,7 @@ final class ConfigurarQrBorradorService
             'datos_qr' => $datosQr,
             'qr_pagina' => $pagina,
             'token_borrador' => $tokenBorrador,
+            'estado' => EstadoCertificado::PendienteFirma,
         ]);
 
         $rutaBorrador = $this->generador->generarBorrador($record, $tokenBorrador);

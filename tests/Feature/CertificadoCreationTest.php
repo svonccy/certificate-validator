@@ -23,8 +23,8 @@ test('certificado set default values on creation', function (): void {
         'ruta_pdf_firmado' => 'certificados/firmados/john.pdf',
     ]);
 
-    // Check default state is PENDIENTE
-    expect($certificado->estado->value)->toBe('PENDIENTE');
+    // Check default state is PENDIENTE_QR
+    expect($certificado->estado->value)->toBe('PENDIENTE_QR');
 
     // Check fecha_emision is populated automatically
     expect($certificado->fecha_emision)->not->toBeNull();

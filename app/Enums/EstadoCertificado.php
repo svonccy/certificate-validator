@@ -9,15 +9,17 @@ use Filament\Support\Contracts\HasLabel;
 
 enum EstadoCertificado: string implements HasColor, HasLabel
 {
-    case Pendiente = 'PENDIENTE';
-    case Valido = 'VALIDO';
+    case PendienteQr = 'PENDIENTE_QR';
+    case PendienteFirma = 'PENDIENTE_FIRMA';
+    case Firmado = 'FIRMADO';
     case Rechazado = 'RECHAZADO';
 
     public function getLabel(): string
     {
         return match ($this) {
-            self::Pendiente => 'Pendiente',
-            self::Valido => 'Válido',
+            self::PendienteQr => 'Pendiente de QR',
+            self::PendienteFirma => 'QR Incrustado',
+            self::Firmado => 'Firmado',
             self::Rechazado => 'Rechazado',
         };
     }
@@ -25,8 +27,9 @@ enum EstadoCertificado: string implements HasColor, HasLabel
     public function getColor(): string
     {
         return match ($this) {
-            self::Pendiente => 'warning',
-            self::Valido => 'success',
+            self::PendienteQr => 'gray',
+            self::PendienteFirma => 'warning',
+            self::Firmado => 'success',
             self::Rechazado => 'danger',
         };
     }

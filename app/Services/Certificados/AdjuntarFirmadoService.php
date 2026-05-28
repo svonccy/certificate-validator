@@ -46,8 +46,8 @@ final class AdjuntarFirmadoService
         $debeVerificarCadena = (bool) config('certificados.verificar_cadena_confianza', true);
 
         $estado = match (true) {
-            $esValido && (! $debeVerificarCadena || $cadenaConfiable) => EstadoCertificado::Valido,
-            $esValido => EstadoCertificado::Pendiente,
+            $esValido && (! $debeVerificarCadena || $cadenaConfiable) => EstadoCertificado::Firmado,
+            $esValido => EstadoCertificado::PendienteFirma,
             default => EstadoCertificado::Rechazado,
         };
 
@@ -93,7 +93,7 @@ final class AdjuntarFirmadoService
         $debeVerificarCadena = (bool) config('certificados.verificar_cadena_confianza', true);
 
         return match ($estado) {
-            EstadoCertificado::Valido => new AdjuntarFirmadoResultado(
+            EstadoCertificado::Firmado => new AdjuntarFirmadoResultado(
                 $estado,
                 $borradorCoincide,
                 'Firma valida',
@@ -102,7 +102,7 @@ final class AdjuntarFirmadoService
                     : 'El PDF firmado fue validado con éxito.',
                 'success',
             ),
-            EstadoCertificado::Pendiente => new AdjuntarFirmadoResultado(
+            EstadoCertificado::PendienteFirma => new AdjuntarFirmadoResultado(
                 $estado,
                 $borradorCoincide,
                 'Firma valida con confianza pendiente',

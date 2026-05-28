@@ -12,10 +12,10 @@ class VerificacionCertificadoController extends Controller
 {
     public function __invoke(Certificado $certificado): View
     {
-        // 1. Cargar las relaciones para evitar el problema de N+1 consultas en la vista
+        // Cargar las relaciones para evitar el problema de N+1 consultas en la vista
         $certificado->load(['titular', 'firmaDigital']);
 
-        // 2. Extraer la firma y sus metadatos desde la nueva tabla (si existe)
+        // Extraer la firma y sus metadatos desde la nueva tabla (si existe)
         $firma = $certificado->firmaDigital;
         $metadatosFirma = $firma ? $firma->metadatos_completos : [];
         $estado = $certificado->estado;

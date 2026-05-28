@@ -44,7 +44,7 @@ class Certificado extends Model
      * @var array<string, string>
      */
     protected $attributes = [
-        'estado' => 'PENDIENTE',
+        'estado' => 'PENDIENTE_QR',
         'qr_pagina' => 1,
     ];
 

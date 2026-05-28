@@ -13,7 +13,7 @@ class DescargarCertificadoController extends Controller
 {
     public function __invoke(Certificado $certificado): StreamedResponse
     {
-        $esValido = $certificado->estado === EstadoCertificado::Valido;
+        $esValido = $certificado->estado === EstadoCertificado::Firmado;
         $ruta = $esValido ? $certificado->ruta_pdf_firmado : $certificado->ruta_pdf_borrador;
 
         if (! $ruta) {

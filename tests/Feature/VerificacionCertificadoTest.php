@@ -20,7 +20,7 @@ test('the public verification page shows certificate details', function (): void
     $certificado = Certificado::query()->create([
         'titular_id' => $titular->getKey(),
         'codigo_certificado' => 'CERT-00001',
-        'estado' => 'VALIDO',
+        'estado' => 'FIRMADO',
         'ruta_pdf_original' => 'certificados/originales/demo.pdf',
         'ruta_pdf_borrador' => 'certificados/borradores/demo.pdf',
         'token_borrador' => 'demo-token',
