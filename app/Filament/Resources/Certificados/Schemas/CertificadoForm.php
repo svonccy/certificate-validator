@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Certificados\Schemas;
 
+use App\Enums\EstadoCertificado;
 use App\Enums\PresetQr;
 use App\Models\Certificado;
+use App\Rules\CleanPdfTemplateRule;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
@@ -35,7 +37,8 @@ class CertificadoForm
                                         TextInput::make('codigo_certificado')
                                             ->label('Código del certificado')
                                             ->required()
-                                            ->maxLength(255),
+                                            ->maxLength(255)
+                                            ->disabled(fn (?Certificado $record): bool => $record?->estado === EstadoCertificado::Firmado),
                                         Select::make('titular_id')
                                             ->label('Titular del Certificado')
                                             ->relationship('titular', 'nombre_completo')
@@ -43,6 +46,7 @@ class CertificadoForm
                                             ->preload()
                                             ->required()
                                             ->getOptionLabelFromRecordUsing(fn (Model $record) => "{$record->dni} - {$record->nombre_completo}")
+                                            ->disabled(fn (?Certificado $record): bool => $record?->estado === EstadoCertificado::Firmado)
                                             ->createOptionForm([
                                                 TextInput::make('dni')
                                                     ->label('DNI')
@@ -69,29 +73,9 @@ class CertificadoForm
                                             ->directory('certificados/plantillas')
                                             ->acceptedFileTypes(['application/pdf'])
                                             ->openable(true)
+                                            ->disabled(fn (?Certificado $record): bool => $record?->estado === EstadoCertificado::Firmado)
                                             ->rules([
-                                                fn (): \Closure => function (string $attribute, mixed $value, \Closure $fail): void {
-                                                    if (is_object($value)) {
-                                                        $exists = false;
-                                                        if (method_exists($value, 'exists')) {
-                                                            $exists = $value->exists();
-                                                        } elseif (method_exists($value, 'getRealPath')) {
-                                                            $path = $value->getRealPath();
-                                                            $exists = ! empty($path) && file_exists($path);
-                                                        }
-
-                                                        if ($exists) {
-                                                            try {
-                                                                $content = method_exists($value, 'get') ? $value->get() : file_get_contents($value->getRealPath());
-                                                                if (str_contains($content, 'CNSM-TOKEN:')) {
-                                                                    $fail('El archivo seleccionado es un borrador que ya contiene un código QR. Por favor, sube la plantilla original limpia.');
-                                                                }
-                                                            } catch (\Throwable $e) {
-                                                                //
-                                                            }
-                                                        }
-                                                    }
-                                                },
+                                                new CleanPdfTemplateRule,
                                             ]),
                                     ]),
                             ])
@@ -124,11 +108,11 @@ class CertificadoForm
                 ->numeric()
                 ->minValue(10)
                 ->required(),
-            TextInput::make('qr_pagina')
-                ->label('Página')
-                ->numeric()
-                ->minValue(1)
-                ->required(),
+            //            TextInput::make('qr_pagina')
+            //                ->label('Página')
+            //                ->numeric()
+            //                ->minValue(1)
+            //                ->required(),
             TextInput::make('qr_x')
                 ->label('Coordenada X (mm)')
                 ->numeric()
