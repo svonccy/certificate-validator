@@ -69,8 +69,7 @@ class CertificadosTable
                         ->color('gray'),
 
                     EditAction::make()
-                        ->color('info')
-                        ->visible(fn (Certificado $record): bool => $record->estado !== EstadoCertificado::Firmado),
+                        ->color('info'),
 
                     DeleteAction::make()
                         ->color('danger')

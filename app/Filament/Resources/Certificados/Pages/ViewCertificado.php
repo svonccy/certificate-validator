@@ -82,8 +82,7 @@ class ViewCertificado extends ViewRecord
                 ->disabled(fn (): bool => ! Storage::disk((string) config('certificados.disk', 'public'))->exists((string) ($this->getRecord()->estado === EstadoCertificado::Firmado ? $this->getRecord()->ruta_pdf_firmado : $this->getRecord()->ruta_pdf_borrador))),
 
             EditAction::make()
-                ->color('info')
-                ->visible(fn (): bool => $this->getRecord()->estado !== EstadoCertificado::Firmado),
+                ->color('info'),
         ];
     }
 }

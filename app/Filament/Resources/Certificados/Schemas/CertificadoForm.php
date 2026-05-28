@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Certificados\Schemas;
 
-use App\Enums\EstadoCertificado;
 use App\Enums\PresetQr;
 use App\Models\Certificado;
 use App\Rules\CleanPdfTemplateRule;
@@ -37,8 +36,7 @@ class CertificadoForm
                                         TextInput::make('codigo_certificado')
                                             ->label('Código del certificado')
                                             ->required()
-                                            ->maxLength(255)
-                                            ->disabled(fn (?Certificado $record): bool => $record?->estado === EstadoCertificado::Firmado),
+                                            ->maxLength(255),
                                         Select::make('titular_id')
                                             ->label('Titular del Certificado')
                                             ->relationship('titular', 'nombre_completo')
@@ -46,7 +44,6 @@ class CertificadoForm
                                             ->preload()
                                             ->required()
                                             ->getOptionLabelFromRecordUsing(fn (Model $record) => "{$record->dni} - {$record->nombre_completo}")
-                                            ->disabled(fn (?Certificado $record): bool => $record?->estado === EstadoCertificado::Firmado)
                                             ->createOptionForm([
                                                 TextInput::make('dni')
                                                     ->label('DNI')
@@ -73,7 +70,6 @@ class CertificadoForm
                                             ->directory('certificados/plantillas')
                                             ->acceptedFileTypes(['application/pdf'])
                                             ->openable(true)
-                                            ->disabled(fn (?Certificado $record): bool => $record?->estado === EstadoCertificado::Firmado)
                                             ->rules([
                                                 new CleanPdfTemplateRule,
                                             ]),
