@@ -48,7 +48,8 @@ class TitularesTable
             ])
             ->recordUrl(fn (Titular $record): string => TitularResource::getUrl('view', ['record' => $record]))
             ->groupedBulkActions([
-                DeleteBulkAction::make(),
+                DeleteBulkAction::make()
+                    ->visible(fn () => auth()->user()?->isAdmin()),
             ]);
     }
 }
