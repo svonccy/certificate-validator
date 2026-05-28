@@ -14,7 +14,7 @@ return new class extends Migration
 
             $table->string('codigo_certificado')->unique();
 
-            $table->string('estado', 20)->default('PENDIENTE_QR')->index();
+            $table->string('estado', 20)->default('PDF_NO_ENCONTRADO')->index();
             $table->timestamp('fecha_emision')->useCurrent();
 
             $table->string('ruta_pdf_original')->nullable();

@@ -25,6 +25,20 @@ class Certificado extends Model
                 $certificado->fecha_emision = now();
             }
         });
+
+        static::saving(function (Certificado $certificado) {
+            // Only auto-transition if the certificate is not yet in PENDIENTE_FIRMA, FIRMADO or RECHAZADO
+            if (empty($certificado->estado) ||
+                $certificado->estado === EstadoCertificado::PdfNoEncontrado ||
+                $certificado->estado === EstadoCertificado::PendienteQr
+            ) {
+                if (empty($certificado->ruta_pdf_original)) {
+                    $certificado->estado = EstadoCertificado::PdfNoEncontrado;
+                } else {
+                    $certificado->estado = EstadoCertificado::PendienteQr;
+                }
+            }
+        });
     }
 
     protected $fillable = [
@@ -44,7 +58,7 @@ class Certificado extends Model
      * @var array<string, string>
      */
     protected $attributes = [
-        'estado' => 'PENDIENTE_QR',
+        'estado' => 'PDF_NO_ENCONTRADO',
         'qr_pagina' => 1,
     ];
 
