@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Tables;
 
+use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -39,9 +40,11 @@ class UsersTable
                 //
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make()
-                    ->visible(fn () => auth()->user()?->isAdmin()),
+                ActionGroup::make([
+                    EditAction::make()->color('info'),
+                    DeleteAction::make()
+                        ->visible(fn () => auth()->user()?->isAdmin()),
+                ]),
             ])
             ->groupedBulkActions([
                 DeleteBulkAction::make()
