@@ -19,7 +19,7 @@ class GenerarQrAction
         return Action::make('generar_qr')
             ->label(fn (Action $action): string => $action->getRecord()?->ruta_pdf_borrador ? 'Re-generar QR' : 'Generar QR')
             ->icon('heroicon-o-qr-code')
-            ->color(fn (Action $action): string => $action->getRecord()?->ruta_pdf_borrador ? 'gray' : 'warning')
+            ->color(fn (Action $action): string => $action->getRecord()?->ruta_pdf_borrador ? 'gray' : 'primary')
             ->modalHeading('Configurar QR')
             ->modalSubmitActionLabel('Generar borrador')
             ->schema(CertificadoForm::esquemaQr())

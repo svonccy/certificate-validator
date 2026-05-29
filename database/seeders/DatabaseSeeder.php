@@ -21,12 +21,12 @@ class DatabaseSeeder extends Seeder
 
         User::factory()->admin()->create([
             'name' => 'Admin User',
-            'email' => 'admin@example.com',
+            'email' => 'admin@cnsm.com',
         ]);
 
         User::factory()->create([
             'name' => 'Operator User',
-            'email' => 'operator@example.com',
+            'email' => 'operator@cnsm.com',
         ]);
 
         $this->call(CertificadoSeeder::class);

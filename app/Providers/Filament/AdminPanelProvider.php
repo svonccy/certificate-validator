@@ -54,7 +54,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->spa()
             ->colors([
-                'primary' => Color::Lime,
+                'primary' => Color::Green,
             ])
             ->font('Geist');
     }
