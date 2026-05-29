@@ -32,7 +32,7 @@ test('certificado set default values on creation', function (): void {
     expect($certificado->fecha_emision->isToday())->toBeTrue();
 });
 
-test('certificado soft deletes is removed and does physical delete', function (): void {
+test('certificado soft deletes is enabled and does logical delete', function (): void {
     $titular = Titular::query()->create([
         'dni' => '11223344',
         'nombre_completo' => 'Jane Smith',
@@ -47,8 +47,11 @@ test('certificado soft deletes is removed and does physical delete', function ()
 
     $certificado->delete();
 
-    // The count should be 0 because soft delete is removed
+    // The count should be 0 because soft delete is active and filters out trashed records by default
     expect(Certificado::query()->count())->toBe(0);
+    // But the record should still exist in the database with soft delete
+    expect(Certificado::withTrashed()->count())->toBe(1);
+    expect($certificado->trashed())->toBeTrue();
 });
 
 test('certificado created without pdf starts as PDF_NO_ENCONTRADO', function (): void {

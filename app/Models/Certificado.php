@@ -12,11 +12,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class Certificado extends Model
 {
     /** @use HasFactory<CertificadoFactory> */
-    use HasFactory, HasUlids;
+    use HasFactory, HasUlids, SoftDeletes;
 
     protected static function booted(): void
     {
@@ -36,6 +38,32 @@ class Certificado extends Model
                     $certificado->estado = EstadoCertificado::PdfNoEncontrado;
                 } else {
                     $certificado->estado = EstadoCertificado::PendienteQr;
+                }
+            }
+        });
+
+        static::updating(function (Certificado $certificado) {
+            $diskName = (string) config('certificados.disk', 'public');
+            $disk = Storage::disk($diskName);
+
+            foreach (['ruta_pdf_original', 'ruta_pdf_firmado'] as $field) {
+                if ($certificado->isDirty($field)) {
+                    $oldPath = $certificado->getOriginal($field);
+                    if ($oldPath && $disk->exists($oldPath)) {
+                        $disk->delete($oldPath);
+                    }
+                }
+            }
+        });
+
+        static::forceDeleted(function (Certificado $certificado) {
+            $diskName = (string) config('certificados.disk', 'public');
+            $disk = Storage::disk($diskName);
+
+            foreach (['ruta_pdf_original', 'ruta_pdf_borrador', 'ruta_pdf_firmado'] as $field) {
+                $path = $certificado->getAttribute($field);
+                if ($path && $disk->exists($path)) {
+                    $disk->delete($path);
                 }
             }
         });
