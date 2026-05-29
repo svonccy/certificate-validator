@@ -13,8 +13,13 @@ use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
 
@@ -51,7 +56,7 @@ class CertificadosTable
                     ->sortable(),
             ])
             ->filters([
-                //
+                TrashedFilter::make(),
             ])
             ->recordActions([
                 ActionGroup::make([
@@ -74,11 +79,23 @@ class CertificadosTable
                     DeleteAction::make()
                         ->color('danger')
                         ->visible(fn () => auth()->user()?->isAdmin()),
+
+                    RestoreAction::make()
+                        ->color('success')
+                        ->visible(fn () => auth()->user()?->isAdmin()),
+
+                    ForceDeleteAction::make()
+                        ->color('danger')
+                        ->visible(fn () => auth()->user()?->isAdmin()),
                 ]),
             ])
             ->recordUrl(fn (Certificado $record): string => CertificadoResource::getUrl('view', ['record' => $record]))
             ->groupedBulkActions([
                 DeleteBulkAction::make()
+                    ->visible(fn () => auth()->user()?->isAdmin()),
+                RestoreBulkAction::make()
+                    ->visible(fn () => auth()->user()?->isAdmin()),
+                ForceDeleteBulkAction::make()
                     ->visible(fn () => auth()->user()?->isAdmin()),
             ]);
     }
