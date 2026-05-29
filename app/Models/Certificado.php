@@ -22,12 +22,6 @@ class Certificado extends Model
 
     protected static function booted(): void
     {
-        static::creating(function (Certificado $certificado) {
-            if (empty($certificado->fecha_emision)) {
-                $certificado->fecha_emision = now();
-            }
-        });
-
         static::saving(function (Certificado $certificado) {
             // Only auto-transition if the certificate is not yet in PENDIENTE_FIRMA, FIRMADO or RECHAZADO
             if (empty($certificado->estado) ||
@@ -73,7 +67,7 @@ class Certificado extends Model
         'titular_id',
         'codigo_certificado',
         'estado',
-        'fecha_emision',
+        'fecha_firma',
         'ruta_pdf_original',
         'ruta_pdf_borrador',
         'datos_qr',
@@ -96,7 +90,7 @@ class Certificado extends Model
     protected function casts(): array
     {
         return [
-            'fecha_emision' => 'datetime',
+            'fecha_firma' => 'datetime',
             'estado' => EstadoCertificado::class,
             'datos_qr' => 'array',
             'qr_pagina' => 'integer',
@@ -104,13 +98,13 @@ class Certificado extends Model
     }
 
     /**
-     * Accesador para la fecha de emisión formateada (d/m/Y).
+     * Accesador para la fecha de firma formateada (d/m/Y).
      * Usado por el generador de PDF.
      */
-    protected function fechaEmisionFormateada(): Attribute
+    protected function fechaFirmaFormateada(): Attribute
     {
         return Attribute::make(
-            get: fn (): string => ($this->fecha_emision ?? now())->format('d/m/Y'),
+            get: fn (): string => $this->fecha_firma ? $this->fecha_firma->format('d/m/Y') : '',
         );
     }
 

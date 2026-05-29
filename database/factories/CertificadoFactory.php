@@ -33,7 +33,7 @@ class CertificadoFactory extends Factory
             },
             'codigo_certificado' => fake()->unique()->bothify('CERT-#####'),
             'estado' => fake()->randomElement(EstadoCertificado::cases()),
-            'fecha_emision' => now(),
+            'fecha_firma' => null,
             'ruta_pdf_original' => 'certificados/originales/'.Str::uuid().'.pdf',
             'ruta_pdf_borrador' => 'certificados/borradores/'.Str::uuid().'.pdf',
             'qr_pagina' => 1,
