@@ -22,7 +22,7 @@ class GenerarQrAction
             ->color(fn (Action $action): string => $action->getRecord()?->ruta_pdf_borrador ? 'gray' : 'primary')
             ->modalHeading('Configurar QR')
             ->modalSubmitActionLabel('Generar borrador')
-            ->schema(CertificadoForm::esquemaQr())
+            ->schema(fn (Action $action): array => CertificadoForm::esquemaQr($action->getRecord()))
             ->modalWidth(Width::Medium)
             ->fillForm(fn (Action $action): array => CertificadoForm::valoresPorDefectoQr($action->getRecord()))
             ->action(function (array $data, Action $action, ConfigurarQrBorradorService $service): void {
@@ -42,7 +42,7 @@ class GenerarQrAction
             ->color(fn (Certificado $record): string => $record->ruta_pdf_borrador ? 'gray' : 'warning')
             ->modalHeading('Configurar QR')
             ->modalSubmitActionLabel('Generar borrador')
-            ->schema(CertificadoForm::esquemaQr())
+            ->schema(fn (Certificado $record): array => CertificadoForm::esquemaQr($record))
             ->modalWidth(Width::Medium)
             ->fillForm(fn (Certificado $record): array => CertificadoForm::valoresPorDefectoQr($record))
             ->action(function (array $data, Certificado $record, ConfigurarQrBorradorService $service): void {

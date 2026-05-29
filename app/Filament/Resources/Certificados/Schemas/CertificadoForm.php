@@ -4,22 +4,28 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Certificados\Schemas;
 
+use App\DTO\DatosQr;
 use App\Enums\PresetQr;
 use App\Models\Certificado;
 use App\Rules\CleanPdfTemplateRule;
+use App\Services\Certificados\CalculadorPosicionQr;
+use App\Services\Certificados\EditorPdfFpdi;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Slider;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\GridDirection;
 use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class CertificadoForm
 {
@@ -44,7 +50,7 @@ class CertificadoForm
                                             ->searchable()
                                             ->preload()
                                             ->required()
-                                            ->getOptionLabelFromRecordUsing(fn(Model $record) => "{$record->dni} - {$record->nombre_completo}")
+                                            ->getOptionLabelFromRecordUsing(fn (Model $record) => "{$record->dni} - {$record->nombre_completo}")
                                             ->createOptionForm([
                                                 TextInput::make('dni')
                                                     ->label('DNI')
@@ -56,7 +62,7 @@ class CertificadoForm
                                                     ->required()
                                                     ->maxLength(255),
                                             ])
-                                            ->createOptionAction(fn($action) => $action->modalHeading('Nuevo Titular')->modalWidth(Width::Medium)),
+                                            ->createOptionAction(fn ($action) => $action->modalHeading('Nuevo Titular')->modalWidth(Width::Medium)),
                                     ]),
                             ])
                             ->columnSpan(1),
@@ -86,41 +92,89 @@ class CertificadoForm
     /**
      * @return array<int, mixed>
      */
-    public static function esquemaQr(): array
+    public static function esquemaQr(?Certificado $record = null): array
     {
+        $width = 210.0;
+        $height = 297.0;
+
+        if ($record && $record->ruta_pdf_original) {
+            try {
+                $disco = Storage::disk((string) config('certificados.disk', 'public'));
+                if ($disco->exists((string) $record->ruta_pdf_original)) {
+                    $editor = new EditorPdfFpdi;
+                    $editor->cargarOrigen($disco->path((string) $record->ruta_pdf_original));
+                    $tamano = $editor->clonarPagina((int) ($record->qr_pagina ?? 1));
+                    $width = (float) $tamano['width'];
+                    $height = (float) $tamano['height'];
+                }
+            } catch (\Throwable $e) {
+                // Fallback to A4 if error
+            }
+        }
+
         return [
             Radio::make('qr_preset_grid')
                 ->label('Posición del QR')
-                ->options(array_map(fn() => '', PresetQr::opcionesCuadricula()))
+                ->options(array_map(fn () => '', PresetQr::opcionesCuadricula()))
                 ->columns(5)
                 ->gridDirection(GridDirection::Row)
-                ->required(fn(Get $get): bool => !(bool)$get('qr_manual'))
-                ->hidden(fn(Get $get): bool => (bool)$get('qr_manual'))
+                ->required(fn (Get $get): bool => ! (bool) $get('qr_manual'))
+                ->hidden(fn (Get $get): bool => (bool) $get('qr_manual'))
                 ->live()
                 ->columnSpanFull(),
             Toggle::make('qr_manual')
                 ->label('Manual')
-                ->live(),
+                ->live()
+                ->afterStateUpdated(function (Get $get, Set $set) use ($width, $height) {
+                    if ($get('qr_manual')) {
+                        $presetValor = $get('qr_preset_grid') ?? PresetQr::Superior1->value;
+                        $preset = PresetQr::desdeValor((string) $presetValor);
+                        if ($preset !== PresetQr::Manual) {
+                            $calculador = new CalculadorPosicionQr;
+                            $datosQr = new DatosQr(
+                                preset: $preset,
+                                lado: (float) ($get('qr_lado') ?? 30.0),
+                                x: null,
+                                y: null,
+                                margenX: 5.0,
+                                margenY: 5.0,
+                                anchoBloqueFactor: 1.2,
+                                pagina: 1
+                            );
+
+                            $posicion = $calculador->calcular($datosQr, ['width' => $width, 'height' => $height], 1.0, 4.0);
+
+                            $set('qr_x', round($posicion->xQr));
+                            $set('qr_y', round($posicion->yQr));
+                        }
+                    }
+                }),
             TextInput::make('qr_lado')
                 ->label('Lado del QR (mm)')
                 ->numeric()
                 ->minValue(10)
-                ->required(),
-            //            TextInput::make('qr_pagina')
-            //                ->label('Página')
-            //                ->numeric()
-            //                ->minValue(1)
-            //                ->required(),
-            TextInput::make('qr_x')
+                ->required()
+                ->live(),
+            Slider::make('qr_x')
                 ->label('Coordenada X (mm)')
-                ->numeric()
-                ->required(fn(Get $get): bool => (bool)$get('qr_manual'))
-                ->hidden(fn(Get $get): bool => !(bool)$get('qr_manual')),
-            TextInput::make('qr_y')
+                ->range(
+                    minValue: 0,
+                    maxValue: fn (Get $get): float => max(0.0, $width - (float) ($get('qr_lado') ?? 30.0))
+                )
+                ->step(1)
+                ->required(fn (Get $get): bool => (bool) $get('qr_manual'))
+                ->hidden(fn (Get $get): bool => ! (bool) $get('qr_manual'))
+                ->live(),
+            Slider::make('qr_y')
                 ->label('Coordenada Y (mm)')
-                ->numeric()
-                ->required(fn(Get $get): bool => (bool)$get('qr_manual'))
-                ->hidden(fn(Get $get): bool => !(bool)$get('qr_manual')),
+                ->range(
+                    minValue: 0,
+                    maxValue: fn (Get $get): float => max(0.0, $height - ((float) ($get('qr_lado') ?? 30.0) + 5.0))
+                )
+                ->step(1)
+                ->required(fn (Get $get): bool => (bool) $get('qr_manual'))
+                ->hidden(fn (Get $get): bool => ! (bool) $get('qr_manual'))
+                ->live(),
         ];
     }
 
@@ -134,7 +188,7 @@ class CertificadoForm
         $datosQr = $record->getAttribute('datos_qr');
         $datosQr = is_array($datosQr) ? $datosQr : [];
 
-        $presetValor = (string)($datosQr['preset'] ?? $defaults['preset'] ?? PresetQr::Superior1->value);
+        $presetValor = (string) ($datosQr['preset'] ?? $defaults['preset'] ?? PresetQr::Superior1->value);
         $preset = PresetQr::desdeValor($presetValor);
         $esManual = $preset === PresetQr::Manual;
 
