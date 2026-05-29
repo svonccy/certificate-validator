@@ -55,6 +55,7 @@ final class AdjuntarFirmadoService
             $certificado->forceFill([
                 'ruta_pdf_firmado' => $rutaPdfFirmado,
                 'estado' => $estado,
+                'fecha_firma' => $fechaFirma,
             ])->save();
 
             $certificado->firmaDigital()->updateOrCreate(

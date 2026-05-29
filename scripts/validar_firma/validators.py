@@ -82,7 +82,7 @@ class PyHankoPdfValidator(SignatureValidator):
             "valido": valido_cripto,
             "motivo": None,
             "firma": {
-                "fecha_firma": iso(getattr(estado, "signing_time", None)),
+                "fecha_firma": iso(getattr(estado, "signer_reported_dt", None)),
                 "algoritmo": str(getattr(estado, "md_algorithm", "")) or None,
                 "serial": hex(getattr(firmante_cert, "serial_number", 0)) if firmante_cert else None,
                 "hash_pdf": hash_pdf,

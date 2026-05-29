@@ -112,13 +112,13 @@ final class GeneradorPdfQr
         // Calcular retroceso en X para centrar el bloque de texto sobre el QR
         $xTexto = $xQr - (($anchoBloque - $lado) / 2);
 
-        $this->pdfEditor->escribirTextoCentrado(
-            'Emitido el: '.$certificado->fecha_emision_formateada,
-            $xTexto,
-            $yTexto,
-            $anchoBloque,
-            self::TEXTO_LINEA_ALTO
-        );
+        //        $this->pdfEditor->escribirTextoCentrado(
+        //            'Emitido el: '.$certificado->fecha_emision_formateada,
+        //            $xTexto,
+        //            $yTexto,
+        //            $anchoBloque,
+        //            self::TEXTO_LINEA_ALTO
+        //        );
     }
 
     /**
