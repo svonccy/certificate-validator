@@ -122,8 +122,29 @@ class CertificadoForm
                 ->hidden(fn (Get $get): bool => (bool) $get('qr_manual'))
                 ->live()
                 ->columnSpanFull(),
+            Slider::make('qr_x')
+                ->label('Coordenada X (mm)')
+                ->range(
+                    minValue: 0,
+                    maxValue: fn (Get $get): int => (int) round(max(0.0, $width - (float) ($get('qr_lado') ?? 30.0)))
+                )
+                ->step(1)
+                ->required(fn (Get $get): bool => (bool) $get('qr_manual'))
+                ->hidden(fn (Get $get): bool => ! (bool) $get('qr_manual'))
+                ->live(),
+            Slider::make('qr_y')
+                ->label('Coordenada Y (mm)')
+                ->range(
+                    minValue: 0,
+                    maxValue: fn (Get $get): int => (int) round(max(0.0, $height - ((float) ($get('qr_lado') ?? 30.0) + 5.0)))
+                )
+                ->step(1)
+                ->required(fn (Get $get): bool => (bool) $get('qr_manual'))
+                ->hidden(fn (Get $get): bool => ! (bool) $get('qr_manual'))
+                ->live(),
             Toggle::make('qr_manual')
                 ->label('Manual')
+                ->helperText('El punto de origen (0,0) es la esquina superior izquierda del documento PDF.')
                 ->live()
                 ->afterStateUpdated(function (Get $get, Set $set) use ($width, $height) {
                     if ($get('qr_manual')) {
@@ -144,8 +165,8 @@ class CertificadoForm
 
                             $posicion = $calculador->calcular($datosQr, ['width' => $width, 'height' => $height], 1.0, 4.0);
 
-                            $set('qr_x', round($posicion->xQr));
-                            $set('qr_y', round($posicion->yQr));
+                            $set('qr_x', (int) round($posicion->xQr));
+                            $set('qr_y', (int) round($posicion->yQr));
                         }
                     }
                 }),
@@ -154,26 +175,6 @@ class CertificadoForm
                 ->numeric()
                 ->minValue(10)
                 ->required()
-                ->live(),
-            Slider::make('qr_x')
-                ->label('Coordenada X (mm)')
-                ->range(
-                    minValue: 0,
-                    maxValue: fn (Get $get): float => max(0.0, $width - (float) ($get('qr_lado') ?? 30.0))
-                )
-                ->step(1)
-                ->required(fn (Get $get): bool => (bool) $get('qr_manual'))
-                ->hidden(fn (Get $get): bool => ! (bool) $get('qr_manual'))
-                ->live(),
-            Slider::make('qr_y')
-                ->label('Coordenada Y (mm)')
-                ->range(
-                    minValue: 0,
-                    maxValue: fn (Get $get): float => max(0.0, $height - ((float) ($get('qr_lado') ?? 30.0) + 5.0))
-                )
-                ->step(1)
-                ->required(fn (Get $get): bool => (bool) $get('qr_manual'))
-                ->hidden(fn (Get $get): bool => ! (bool) $get('qr_manual'))
                 ->live(),
         ];
     }
@@ -196,8 +197,8 @@ class CertificadoForm
             'qr_preset_grid' => $esManual ? PresetQr::Superior1->value : $preset->value,
             'qr_manual' => $esManual,
             'qr_lado' => $datosQr['lado'] ?? $defaults['lado'] ?? 30,
-            'qr_x' => $datosQr['x'] ?? $defaults['x'] ?? null,
-            'qr_y' => $datosQr['y'] ?? $defaults['y'] ?? null,
+            'qr_x' => isset($datosQr['x']) ? (int) round((float) $datosQr['x']) : ($defaults['x'] ?? null),
+            'qr_y' => isset($datosQr['y']) ? (int) round((float) $datosQr['y']) : ($defaults['y'] ?? null),
             'qr_pagina' => $record->getAttribute('qr_pagina') ?? ($defaults['pagina'] ?? 1),
         ];
     }
