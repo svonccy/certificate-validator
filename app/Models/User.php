@@ -22,6 +22,22 @@ class User extends Authenticatable implements FilamentUser
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    protected static function booted(): void
+    {
+        static::creating(function (User $user) {
+            if (app()->runningInConsole()) {
+                $argv = $_SERVER['argv'] ?? [];
+                $argvString = implode(' ', $argv);
+                if (str_contains($argvString, 'make:filament-user') ||
+                    str_contains($argvString, 'filament:make-user') ||
+                    str_contains($argvString, 'filament:user')
+                ) {
+                    $user->role = UserRole::Admin;
+                }
+            }
+        });
+    }
+
     /**
      * Get the attributes that should be cast.
      *

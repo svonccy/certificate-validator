@@ -82,3 +82,17 @@ test('operators cannot access or manage users', function () {
     expect($operator->can('update', new User))->toBeFalse();
     expect($operator->can('delete', new User))->toBeFalse();
 });
+
+test('make:filament-user command creates a user with admin role', function () {
+    $_SERVER['argv'] = ['artisan', 'make:filament-user'];
+
+    $this->artisan('make:filament-user', [
+        '--name' => 'Admin User',
+        '--email' => 'admin@test.com',
+        '--password' => 'password123',
+    ])->assertExitCode(0);
+
+    $user = User::where('email', 'admin@test.com')->first();
+    expect($user)->not->toBeNull();
+    expect($user->role->value)->toBe('admin');
+});
