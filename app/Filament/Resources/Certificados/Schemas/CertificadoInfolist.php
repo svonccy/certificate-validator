@@ -30,12 +30,13 @@ class CertificadoInfolist
                                         TextEntry::make('titular.nombre_completo')
                                             ->label('Titular')
                                             ->formatStateUsing(fn ($record) => "{$record->titular->dni} - {$record->titular->nombre_completo}"),
-                                        TextEntry::make('fecha_emision')
-                                            ->label('Fecha de Emisión')
-                                            ->date('d/m/Y'),
                                         TextEntry::make('estado')
                                             ->label('Estado')
                                             ->badge(),
+                                        TextEntry::make('fecha_firma')
+                                            ->label('Fecha de Firma')
+                                            ->placeholder('Pendiente de firma')
+                                            ->dateTime('d/m/Y H:i'),
                                         TextEntry::make('created_at')
                                             ->label('Creado el')
                                             ->dateTime('d/m/Y H:i:s'),

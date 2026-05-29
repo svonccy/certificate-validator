@@ -27,9 +27,8 @@ test('certificado set default values on creation', function (): void {
     // Check default state is PENDIENTE_QR
     expect($certificado->estado->value)->toBe('PENDIENTE_QR');
 
-    // Check fecha_emision is populated automatically
-    expect($certificado->fecha_emision)->not->toBeNull();
-    expect($certificado->fecha_emision->isToday())->toBeTrue();
+    // Check fecha_firma is null on creation
+    expect($certificado->fecha_firma)->toBeNull();
 });
 
 test('certificado soft deletes is enabled and does logical delete', function (): void {

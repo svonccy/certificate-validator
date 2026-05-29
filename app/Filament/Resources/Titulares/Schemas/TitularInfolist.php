@@ -52,9 +52,10 @@ class TitularInfolist
                                                 TextEntry::make('estado')
                                                     ->label('Estado')
                                                     ->badge(),
-                                                TextEntry::make('fecha_emision')
-                                                    ->label('Fecha de Emisión')
-                                                    ->date('d/m/Y'),
+                                                TextEntry::make('fecha_firma')
+                                                    ->label('Fecha de Firma')
+                                                    ->placeholder('Pendiente de firma')
+                                                    ->dateTime('d/m/Y H:i'),
                                             ])
                                             ->columns(3),
                                     ]),
