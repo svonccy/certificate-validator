@@ -43,7 +43,11 @@ class CertificadoForm
                                         TextInput::make('codigo_certificado')
                                             ->label('Código del certificado')
                                             ->required()
-                                            ->maxLength(255),
+                                            ->maxLength(255)
+                                            ->unique('certificados', 'codigo_certificado', ignoreRecord: true)
+                                            ->validationMessages([
+                                                'unique' => 'Este codigo de certificado ya existe',
+                                            ]),
                                         Select::make('titular_id')
                                             ->label('Titular del Certificado')
                                             ->relationship('titular', 'nombre_completo')

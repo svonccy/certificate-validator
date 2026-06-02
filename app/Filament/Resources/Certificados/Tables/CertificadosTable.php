@@ -19,6 +19,7 @@ use Filament\Actions\RestoreAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
@@ -56,6 +57,9 @@ class CertificadosTable
                     ->sortable(),
             ])
             ->filters([
+                SelectFilter::make('estado')
+                    ->label('Estado')
+                    ->options(EstadoCertificado::class),
                 TrashedFilter::make(),
             ])
             ->recordActions([
@@ -97,6 +101,7 @@ class CertificadosTable
                     ->visible(fn () => auth()->user()?->isAdmin()),
                 ForceDeleteBulkAction::make()
                     ->visible(fn () => auth()->user()?->isAdmin()),
-            ]);
+            ])
+            ->defaultSort('created_at', 'desc');
     }
 }
