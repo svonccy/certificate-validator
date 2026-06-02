@@ -1,0 +1,19 @@
+# nixpacks.toml
+# Configure Nixpacks to build PHP, Node.js (for assets compilation), and Python 3.
+
+providers = ["php", "node", "python"]
+
+[variables]
+    # Set production variables for Nixpacks
+    NIXPACKS_PHP_VERSION = "8.3"
+    NIXPACKS_NODE_VERSION = "20"
+    NIXPACKS_PYTHON_VERSION = "3.11"
+
+[phases.install]
+    # Ensure PHP dependencies and Python requirements are installed
+    # (Node.js will automatically run 'npm ci' and build assets)
+    dependsOn = ["setup"]
+    cmds = [
+        "composer install --no-dev --optimize-autoloader --no-interaction",
+        "pip install -r requirements.txt"
+    ]
