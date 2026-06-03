@@ -14,6 +14,7 @@ FROM dunglas/frankenphp:1-php8.4
 
 # Set environment variables
 ENV CAP_NET_BIND_SERVICE=1
+ENV SERVER_NAME=":80"
 ENV LARAVEL_PROD=true
 
 WORKDIR /app
