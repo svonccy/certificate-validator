@@ -38,23 +38,19 @@ La validación de firmas criptográficas de PDFs en Python (`pyHanko`) es una ta
    ```
 3. Inícialo. Si no enciendes este worker, los certificados se quedarán en estado "Pendiente" por siempre.
 
-## 3. Comandos Post-Despliegue Inicial
+## 3. Automatizar Comandos Post-Despliegue (¡Sin pereza!)
 
-La primera vez que la aplicación arranque con éxito, ve a la sección **Terminal** del contenedor en Coolify y ejecuta:
+Para que no tengas que entrar a la Terminal manualmente cada vez que haces un cambio en el código (y evitar que el sistema se quede con la caché antigua), Coolify tiene una función de automatización.
+
+1. Ve a la configuración de tu aplicación en Coolify.
+2. Busca el campo llamado **Post-deployment Command** (Comando Post-Despliegue).
+3. Pega exactamente este bloque de comandos ahí:
 
 ```bash
-# 1. Correr las migraciones de la DB
-php artisan migrate --force
-
-# 2. Enlazar el storage público
-php artisan storage:link
-
-# 3. Optimizar el rendimiento en producción
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-php artisan filament:cache-components
+php artisan migrate --force && php artisan storage:link && php artisan optimize:clear && php artisan optimize && php artisan filament:cache-components
 ```
+
+¡Listo! Ahora cada vez que hagas un `git push`, Coolify descargará la imagen y ejecutará estos comandos por ti automáticamente.
 
 > [!TIP]
 > **Privacidad de la Imagen GHCR:** Recuerda que si tu repositorio en GitHub es privado, la imagen Docker compilada en la sección "Packages" también lo será por defecto. Si Coolify lanza un error `Unauthorized` al hacer el despliegue, debes ir a GitHub Packages y cambiar la visibilidad de tu paquete a **Public** (tu código fuente seguirá siendo privado, solo la imagen compilada será pública).
