@@ -1,9 +1,8 @@
 @php
     $pdfPath = $path ?? null;
     $disk = (string) config('certificados.disk', 'public');
-    $pdfUrl = $pdfPath
-        ? ($disk === 'public' ? asset('storage/' . $pdfPath) : \Illuminate\Support\Facades\Storage::disk($disk)->url((string) $pdfPath))
-        : null;
+    // Usamos Storage::url() para que tome el APP_URL de tu .env (https) en lugar del request actual
+    $pdfUrl = $pdfPath ? \Illuminate\Support\Facades\Storage::disk($disk)->url((string) $pdfPath) : null;
 @endphp
 
 @vite(['resources/css/app.css'])
