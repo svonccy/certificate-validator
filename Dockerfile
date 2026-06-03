@@ -14,7 +14,6 @@ FROM dunglas/frankenphp:1-php8.4
 
 # Set environment variables
 ENV CAP_NET_BIND_SERVICE=1
-ENV PHP_INI_SCAN_DIR=":$PHP_INI_DIR/conf.d"
 ENV LARAVEL_PROD=true
 
 WORKDIR /app
@@ -33,11 +32,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libfreetype6-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions using docker-php-extension-installer script
-# We exclude gd and opcache as they are already loaded in FrankenPHP and cause conflicts.
-RUN curl -sSL https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions -o /usr/local/bin/install-php-extensions \
-    && chmod +x /usr/local/bin/install-php-extensions \
-    && install-php-extensions zip intl pdo_mysql pcntl bcmath
+# Install PHP extensions using the native script provided by FrankenPHP
+RUN install-php-extensions gd zip pdo_mysql opcache intl pcntl bcmath
 # Install python packages (pyhanko and pyhanko-certvalidator)
 # Note: --break-system-packages is safe and required in newer Debian versions inside a Docker container
 RUN pip3 install --break-system-packages pyhanko pyhanko-certvalidator
